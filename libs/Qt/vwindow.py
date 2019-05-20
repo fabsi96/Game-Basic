@@ -22,6 +22,8 @@ from libs.OpenGL.DAL.Outer.vopengl import VOpenGL
 from libs.OpenGL.Shader.shaderprogram import ShaderProgram
 
 from libs.OpenGL.Shader.shaderloader import *
+from libs.library import Library
+
 
 class VWindow(QWidget):
    def __init__(self,locX, locY, width, height, parent=None):
@@ -32,13 +34,14 @@ class VWindow(QWidget):
       self.setWindowTitle("OpenGL Window")
       self.setGeometry(locX, locY, width, height)
 
-      self.createIntervallTimer(10)
+      self.createIntervallTimer(1)
 
       self.keyPressCallbackFunc = None
       self.keyReleaseCallbackFunc = None
       self.mousePressCallbackFunc = None
       self.mouseReleaseCallbackFunc = None
       self.mouseMoveCallbackFunc = None
+      self.mouseWheelCallbackFunc = None
 
       self._projectionMatrix = None
 
@@ -60,6 +63,9 @@ class VWindow(QWidget):
 
    def setMouseMoveCallback(self, callbackFunc):
       self.mouseMoveCallbackFunc = callbackFunc
+
+   def setMouseWheelCallback(self, callbackFunc):
+      self.mouseWheelCallbackFunc = callbackFunc
 
    def createIntervallTimer(self, milliSeconds):
       self.qTimer = QTimer(self)
@@ -87,6 +93,10 @@ class VWindow(QWidget):
       if self.mouseReleaseCallbackFunc:
          self.mouseReleaseCallbackFunc(mouseEvent)
 
+   def wheelEvent(self, wheelEvent: QWheelEvent):
+      if self.mouseWheelCallbackFunc:
+         self.mouseWheelCallbackFunc(wheelEvent)
+
    def resizeEvent(self, qResize):
       windowSize = self.frameGeometry()
       self.glWindow.setGeometry(0, 0, windowSize.width(), windowSize.height())
@@ -94,7 +104,6 @@ class VWindow(QWidget):
    def close(self):
       # self.qTimer.stop()
       pass
-
 
 class VGLWindow(QGLWidget):
    ShaderVersion = 440
@@ -123,9 +132,13 @@ class VGLWindow(QGLWidget):
    def paintGL(self):
       try:
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+         Library.camera.update()
          for obj in self.objects:
             obj.render()
-
+         """
+         for obj in self.objects:
+            obj.renderNormalsVertices()
+         """
       except Exception as ex:
          print("paintGL() - Exception :: {0}".format(str(ex)))
 
@@ -145,6 +158,7 @@ class VGLWindow(QGLWidget):
          glGetString(GL_RENDERER),
          glGetString(GL_VERSION),
          glGetString(GL_SHADING_LANGUAGE_VERSION))
-      VGLWindow.ShaderVersion = int(glGetString(GL_SHADING_LANGUAGE_VERSION).decode('ascii').replace('.', ''))
+      versionStr = glGetString(GL_SHADING_LANGUAGE_VERSION)
+      VGLWindow.ShaderVersion = 460 # int(glGetString(GL_SHADING_LANGUAGE_VERSION).decode('ascii').replace('.', ''))
       return info
 

@@ -38,20 +38,7 @@ class ShaderProgram:
       self.__intIds = {}
       self.__floatIds = {}
       self.__texAttrIds = {}
-      self.__lightIds = {}
-
-
-      position = np.array(tvec3([2, 1.8, 1.7]), dtype=np.float32)
-      lightColor = np.array(tvec3([0.85,0.75,0.5]), dtype=np.float32)
-      try:
-         self.start()
-         self.loadVector3("lightPosition")
-         self.setVector3("lightPosition", position)
-         self.loadVector3("lightColor")
-         self.setVector3("lightColor", lightColor)
-         self.stop()
-      except Exception as ex:
-         print("shader ex :: {}".format(str(ex)))
+      self.__vec3Ids = {}
 
    def getProgramID(self):
       return self.__programID
@@ -155,20 +142,21 @@ class ShaderProgram:
       else:
          glUniform1i(index, value)
 
-   def loadVector3(self, attrName: str):
+   def loadVector3f(self, attrName: str):
       try:
          if self.__programID and self.__programID != -1:
             index = glGetUniformLocation(self.__programID, attrName)
             if index == -1:
                raise Exception("Vector3 konnte nicht gefunden werden. Bitte Shader auf Namen überprüfen.")
             else:
-               self.__lightIds.update({attrName:index})
+               self.__vec3Ids.update({attrName:index})
       except Exception as ex:
          raise ex
 
-   def setVector3(self, attrName: str, value: np.array):
-      index = self.__lightIds.get(attrName)
+   def setVector3f(self, attrName: str, value: np.array):
+      index = self.__vec3Ids.get(attrName)
       if index is None or index == -1:
          raise Exception("Vector3 konnte nicht gefunden sowie nicht gesetzt werden. Bitte Shader überprüfen")
       else:
          glUniform3fv(index, 1, value)
+

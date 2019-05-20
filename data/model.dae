@@ -692,6 +692,7 @@
   </library_controllers>
   <library_visual_scenes>
     <visual_scene id="Scene" name="Scene">
+	  <!--
       <node id="Camera" name="Camera" type="NODE">
         <translate sid="location">10.47735 -20.45861 11.95875</translate>
         <rotate sid="rotationZ">0 0 1 26.73652</rotate>
@@ -700,6 +701,7 @@
         <scale sid="scale">1 0.9999999 1</scale>
         <instance_camera url="#Camera-camera"/>
       </node>
+	  -->
       <node id="Armature" name="Armature" type="NODE">
         <translate sid="location">0 0 0</translate>
         <rotate sid="rotationZ">0 0 1 0</rotate>

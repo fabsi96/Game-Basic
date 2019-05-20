@@ -1,0 +1,23 @@
+# loadMap - Algorithmus
+
+loadMap(mapSize, mapDividor):
+
+VARIABLE i = 0 // x
+VARIABLE j = 0 // y
+VARIABLE schrittweite = 1 / mapDividor // Schrittweite gibt Vertexfeld vor
+
+// Bei z = 0 anfangen und pro Zeile immer x bis zur mapSize gehen und dann wieder z um die schrittweite erhöhen
+SOLANGE j IST KLEINER GLEICH mapSize WIEDERHOLE
+	// z Koordinate gesetzt, nun in x Richtung bis zur mapSize
+	SOLANGE i IST KLEINER GLEICH mapSize WIEDERHOLE
+		xKoordinate = i // die aktuelle X-Koordinate entwickelt sich aus der i-ten Zeile und schrittweite
+		zKoordinate = j // die aktuelle Z-Koordinate entwickelt sich aus der j-ten Spalte und schrittweite
+		
+		i = i + schrittweite
+		
+	ENDE SOLANGE
+	i = 0
+	j = j + schrittweite
+	
+ENDE SOLANGE
+	

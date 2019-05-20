@@ -33,8 +33,11 @@ class StartControl(VControl):
    def getScaleMap(self, name: str):
       return Library.loader.getScaleMap(name)
 
-   def getLightSource(self, lightMode: str):
-      return Library.loader.getLightSource(lightMode)
+   def getMap(self):
+      return Library.loader.getMap()
+
+   def getLightSource(self):
+      return Library.loader.getLightSource()
 
    def setKeyPressCallback(self, callbackFunc):
       Library.mainWindow.setKeyPressCallback(callbackFunc)
@@ -50,3 +53,6 @@ class StartControl(VControl):
 
    def setMouseMoveCallback(self, callbackFunc):
       Library.mainWindow.setMouseMoveCallback(callbackFunc)
+
+   def setMouseWheelCallback(self, callbackFunc):
+      Library.mainWindow.setMouseWheelCallback(callbackFunc)

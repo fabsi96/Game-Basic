@@ -285,7 +285,7 @@ class RawObject:
    def loadMap2(self, mapSize=10, mapDividor=8):
       # load image
       image = Image.open("data/res/" + "hmap.bmp")
-
+      self.textureFiles.append("pathMap.bmp")
       # Geometry helper
       stepSize = 1 / mapDividor
       x = 0
@@ -295,6 +295,10 @@ class RawObject:
             self.vertexCoords.append(x)
             self.vertexCoords.append(self.__getHeight2(image, mapSize, x, z))
             self.vertexCoords.append(z)
+
+            self.textureCoords.append((x / (mapSize+1)))
+            self.textureCoords.append((z / (mapSize+1)))
+
             x = x + stepSize
          x = 0
          z = z + stepSize

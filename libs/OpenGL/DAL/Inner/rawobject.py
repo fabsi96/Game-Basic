@@ -1,7 +1,8 @@
 # encoding: utf-8
 
-import numpy as np
 import os
+
+import numpy as np
 from OpenGL.GL import *
 from PIL import Image
 from collada import Collada
@@ -28,8 +29,9 @@ class RawObject:
 
       self.mapSize = -1
       self.mapHeights = {}
+      self.stepSize = -1
 
-   def loadDAE(self, filename: str):
+   def loadDAE(self, filename: str, isLight=False):
       fullPath = os.path.join(RawObject.DATA_DIR, filename)
       if os.path.isfile(fullPath):
          modelVertices = []
@@ -71,9 +73,16 @@ class RawObject:
             modelVertices.append(i[1])
             modelVertices.append(i[2])
          for i in daeNormals:
-            modelNormals.append(i[0])
-            modelNormals.append(i[1])
-            modelNormals.append(i[2])
+            if isLight is True:
+               modelNormal = tvec3(i[0],i[1],i[2])
+               inverseNormal = tvec3(0.0, 0.0, 0.0) - modelNormal
+               modelNormals.append(inverseNormal.x)
+               modelNormals.append(inverseNormal.y)
+               modelNormals.append(inverseNormal.z)
+            else:
+               modelNormals.append(i[0])
+               modelNormals.append(i[1])
+               modelNormals.append(i[2])
          for data in daeTextures:
             modelTextures.append(data[0])
             modelTextures.append(data[1])
@@ -151,12 +160,7 @@ class RawObject:
             newModelTextures[(newIndex * 2) + 1] = modelTextures[(tIndex * 2) + 1]
 
       return modelVertices, modelNormals, newModelTextures, modelIndices
-   # TODO
-   def sortNormals(self):
-      pass
-   # TODO
-   def sortTexture(self):
-      pass
+
    @staticmethod
    def triangulateDaeIndices(modelVertices, modelNormals, modelTextures, modelVerticesIndex, modelNormalsIndex, modelTexturesIndex):
       newModelVertices = []
@@ -282,22 +286,43 @@ class RawObject:
 
       return height
 
-   def loadMap2(self, mapSize=10, mapDividor=8):
+   def loadMap2(self, mapSize=10, mapDividor=1, heightMap="", pathMap=""):
+
+      if mapDividor > 16:
+         raise Exception("Too high mapdividor")
       # load image
-      image = Image.open("data/res/" + "hmap.bmp")
-      self.textureFiles.append("pathMap.bmp")
+      if os.path.isfile(os.path.join("data/res", pathMap)):
+         image = Image.open("data/res/" + heightMap)
+      else:
+         raise Exception("Could not find pathmap")
+      self.textureFiles.append(pathMap)
       # Geometry helper
       stepSize = 1 / mapDividor
       x = 0
       z = 0
-      while z <= mapSize:
-         while x <= mapSize:
-            self.vertexCoords.append(x)
-            self.vertexCoords.append(self.__getHeight2(image, mapSize, x, z))
-            self.vertexCoords.append(z)
+      maxHeightDiffPct = 1
+      lastMapHeight = -1
 
-            self.textureCoords.append((x / (mapSize+1)))
-            self.textureCoords.append((z / (mapSize+1)))
+      while z <= mapSize:
+         self.mapHeights[z] = {}
+         while x <= mapSize:
+            """ Calculate height at this point """
+            height_f = float(self.__getHeight2(image, mapSize, x, z))
+            roundedHeight_s = "{:.5f}".format(height_f)
+            roundedHeight_f = float(roundedHeight_s)
+
+            self.vertexCoords.append(x)
+            self.vertexCoords.append(roundedHeight_f)
+            self.vertexCoords.append(z)
+            self.mapHeights[z][x] = roundedHeight_f
+
+            currentNormal : tvec3 = self.__calcNormal2(image, mapSize, x, z)
+            self.normalCoords.append(currentNormal.x)
+            self.normalCoords.append(currentNormal.y)
+            self.normalCoords.append(currentNormal.z)
+
+            self.textureCoords.append((x / (mapSize+1))) # x
+            self.textureCoords.append((z / (mapSize+1))) # y
 
             x = x + stepSize
          x = 0
@@ -325,24 +350,29 @@ class RawObject:
          runner = runner + 1
          i = 0
 
+         self.stepSize = stepSize
+         self.mapSize = mapSize
+
    def __getHeight2(self, image: Image, mapSize, x, z):
       # Convert map-coordinates to image coords
-      imageWidth = image.width
-      imageHeight = image.height
-      imageX = 0
-      imageY = 0
-      if x != 0:
+      imageWidth = image.width-1
+      imageHeight = image.height-1
+      if x >= 0 and z >= 0:
          imageX = (x / (mapSize+1)) * imageWidth
-      if z != 0:
          imageY = (z / (mapSize+1)) * imageHeight
-      try:
-         r, g, b = image.getpixel((imageX, imageY))
-      except:
-         print("Range value : {0}/{1}".format(imageX, imageY))
-      height = r * g * b
-      height = -height
-      height += self.MAX_PIXEL_COLOR / 2.0
-      height /= self.MAX_PIXEL_COLOR / 2.0
-      height *= self.MAX_HEIGHT
+         try:
+            r, g, b = image.getpixel((imageX, imageY))
+            return (r * g * b) * self.MAX_HEIGHT / self.MAX_PIXEL_COLOR * -1
+         except:
+            print("{} :: Range value : {}/{}".format(self.__class__, imageX, imageY))
+      else:
+         return 0
 
-      return height
+   def __calcNormal2(self, image: Image, mapSize: int, x: float, z: float):
+      hLeft = self.__getHeight2(image, mapSize, x - 1, z)
+      hRight = self.__getHeight2(image, mapSize, x + 1, z)
+      hDown = self.__getHeight2(image, mapSize, x, z - 1)
+      hUp = self.__getHeight2(image, mapSize, x, z + 1)
+
+      normal = tvec3([hLeft - hRight, 2.0, hDown - hUp])
+      return normalize(normal)

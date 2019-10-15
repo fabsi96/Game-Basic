@@ -41,23 +41,27 @@ class VOpenGL:
       raise NotImplementedError("Main Class")
 
    """ Returns vao and vbo """
+   # -------------------------------
    @staticmethod
    def uploadVertexData(vao, data_f, shaderProgram, vertexShaderName, vertsPerCoord):
+   # -------------------------------
       if vao is None or vao < 1:
          raise Exception("Vao is not defined")
       try:
          glBindVertexArray(vao)
          vbo = glGenBuffers(1)
          glBindBuffer(GL_ARRAY_BUFFER, vbo)
-         numpyData = np.array(data_f, dtype=GLfloat)
+         numpyData = np.array(data_f, dtype=np.float32)
          glBufferData(GL_ARRAY_BUFFER, len(numpyData) * ctypes.sizeof(GLfloat), numpyData, GL_STATIC_DRAW)
          shaderProgram.loadVertexAttribute(vertexShaderName)
          shaderProgram.setVertexAttribute(vertexShaderName, vertsPerCoord, GL_FLOAT)
          glBindBuffer(GL_ARRAY_BUFFER, 0)
          glBindVertexArray(0)
+         return vbo
       except Exception as ex:
-         raise ex
-      return vbo
+         print(str(ex))
+      return -1
+
    @staticmethod
    def uploadIndexData(vao, data_i):
       if vao is None or vao < 1:
@@ -71,11 +75,9 @@ class VOpenGL:
          glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(indexData) * ctypes.sizeof(GLuint), indexData, GL_STATIC_DRAW)
          glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
          glBindVertexArray(0)
-
+         return vbo
       except Exception as ex:
          raise ex
-
-      return vbo
 
    def _uploadGeometry(self, rawObject: RawObject):
       try:
@@ -91,27 +93,10 @@ class VOpenGL:
             self.normalVbo = VOpenGL.uploadVertexData(self.vao,rawObject.normalCoords, self.sp, "normalCoord", 3)
          if rawObject.textureCoords.__len__() > 1:
             self.textureVbo = VOpenGL.uploadVertexData(self.vao,rawObject.textureCoords, self.sp, "textureCoord", 2)
-         unitRunner = 0
-         for texFile in self.textureFiles:
-            self._uploadTexture(os.path.basename(texFile), "testTexture", unitRunner)
-            # TODO
-            # Dynamic shader texture
-            # self._uploadTexture(os.path,basename(texFile), "testTexture" + str(unitRunner), unitRunner)
-            unitRunner += 1
          glBindVertexArray(0)
 
       except Exception as ex:
          print("Exception :: {}".format(str(ex)))
-
-   def _uploadIndices(self, indices):
-      try:
-         self.indicesCount = int(len(indices))
-         self.indicesVbo = glGenBuffers(1)
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self.indicesVbo)
-         glBufferData(GL_ELEMENT_ARRAY_BUFFER, len(indices) * ctypes.sizeof(GLuint), indices, GL_STATIC_DRAW)
-         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-      except Exception as ex:
-         raise ex
 
    def _uploadTexture(self, filename, shaderTexName, unit):
       try:

@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import os
+
 # dal outer
 from glm.gtc.matrix_transform import *
 from glm.gtc.quaternion import *
@@ -18,20 +20,29 @@ from libs.library import Library
 
 
 class VObject(VOpenGL):
-   MOVEMENT_SPEED = 0.1
+   MOVEMENT_SPEED = 0.08
    def __init__(self, rawObject: RawObject, sp: ShaderProgram, normalsShader=None):
       try:
          super(VObject, self).__init__(rawObject, sp)
+         # --- Upload texture
+         unitRunner = 0
+         # TODO
+         if self.textureFiles.__len__() == 1:
+            for texFile in self.textureFiles:
+               self._uploadTexture(os.path.basename(texFile), "testTexture", unitRunner)
+               unitRunner += 1
+
+         # ---
          self.renderMode = rawObject.renderMode
 
          # Translation
-         self._position = tvec3([0.0, 0.0, -2.0])
+         self._position: tvec3 = tvec3([0.0, 0.0, 0.0])
          # Rotation
          self._xDegrees = 0
          self._yDegrees = 0
          self._zDegrees = 0
          # Scale
-         self._scale = tvec3([1.0, 1.0, 1.0])
+         self._scale: tvec3 = tvec3([1.0, 1.0, 1.0])
          # TransformationMatrix
          self._transformationMatrix = tmat4x4([1.0])
          self._updateTransformationMatrix()
@@ -80,6 +91,7 @@ class VObject(VOpenGL):
 
    def __uploadNormalsVertices(self, normalsVertices):
       try:
+         self.__normalsShader.start()
          self.__vertexNormalsVAO = glGenVertexArrays(1)
          glBindVertexArray(self.__vertexNormalsVAO)
          self.__vertexNormalsVBO = glGenBuffers(1)
@@ -89,6 +101,7 @@ class VObject(VOpenGL):
          self.__normalsShader.setVertexAttribute("vertexCoord", 3, GL_FLOAT)
          glBindBuffer(GL_ARRAY_BUFFER, 0)
          glBindVertexArray(0)
+         self.__normalsShader.stop()
       except Exception as ex:
          raise ex
 
@@ -154,11 +167,14 @@ class VObject(VOpenGL):
    def _updateTransformationMatrix(self):
       try:
          translationMatrix = translate(tmat4x4([1.0]), self._position)
-         xRotationMatrix = rotate(translationMatrix, radians(self._xDegrees), tvec3([1.0, 0.0, 0.0]))
-         yRotationMatrix = rotate(xRotationMatrix, radians(self._yDegrees), tvec3([0.0, 1.0, 0.0]))
-         zRotationMatrix = rotate(yRotationMatrix, radians(self._zDegrees), tvec3([0.0, 0.0, 1.0]))
-         self._transformationMatrix = scale(zRotationMatrix, self._scale)
-         self._transformationMatrix = np.matrix(self._transformationMatrix, dtype=np.float32)
+
+         xRotationMatrix = rotate(tmat4x4(), radians(self._xDegrees), tvec3(1.0, 0.0, 0.0))
+         yRotationMatrix = rotate(tmat4x4(), radians(self._yDegrees), tvec3(0.0, 1.0, 0.0))
+         zRotationMatrix = rotate(tmat4x4(), radians(self._zDegrees), tvec3(0.0, 0.0, 1.0))
+         rotationMatrix = xRotationMatrix * yRotationMatrix * zRotationMatrix
+
+         scaleMatrix = scale(tmat4x4(), self._scale)
+         self._transformationMatrix = np.matrix(translationMatrix * rotationMatrix * scaleMatrix, dtype=np.float32)
       except Exception as ex:
          raise ex
 

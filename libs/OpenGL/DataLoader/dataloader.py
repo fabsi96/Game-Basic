@@ -6,22 +6,22 @@ import os
 from glm.gtc.matrix_transform import *
 
 # Libraries
+from libs.OpenGL.DAL.Outer.vcubemap import VCubeMap
 from libs.OpenGL.DAL.Outer.vlightsource import VLightSource
 from libs.OpenGL.DAL.Outer.vmap import VMap
 from libs.OpenGL.DAL.Outer.vobject import VObject
 from libs.OpenGL.Shader.NormalsShader.normalsshader import NormalsShader
+from libs.OpenGL.Shader.cubeMapShader.cubeMapShader import CubeMapShader
 from libs.OpenGL.Shader.mapShader.mapshader import MapShader
 from libs.OpenGL.Shader.modelShader.modelshader import ModelShader
-from libs.OpenGL.Shader.shaderloader import getShader
-from libs.Qt.vwindow import VGLWindow
 
 # DAL Inner
 from libs.OpenGL.DAL.Inner.rawobject import RawObject
 
 # DAL Outer
-from libs.OpenGL.DAL.Outer.vopengl import VOpenGL
 
 # Global
+from libs.library import Library
 from settings import *
 
 # Local
@@ -47,43 +47,49 @@ class DataLoader:
       self.__dataController_o = DataControl(fullPath_s, DataLoader.DATA_PREFIX + DataLoader.DATA_SUFFIX)
 
       self.__modelShader = ModelShader()
-      self.__normalsShader = NormalsShader()
 
-   # TODO
-   def getLightSource(self):
-      daeRawObject = RawObject()
-      daeRawObject.loadDAE("testQuad.dae")
-      return VLightSource(daeRawObject, self.__modelShader)
 
-   def getMap(self):
-      rawMap = RawObject()
-      rawMap.loadMap2()
-      return VMap(rawMap, MapShader())
+      self.__skyBox = self.getSkyBox()
 
-   def getScaleMap(self, name: str):
-      try:
-         scaleMapObject = RawObject()
-         scaleMapObject.loadScaleMap(name)
-      except Exception as ex:
-         raise ex
-      return VObject(scaleMapObject, self.__modelShader, self.__normalsShader)
-
-   def getDAEObject(self, filename:str):
-      try:
-         daeRawObject = RawObject()
-         daeRawObject.loadDAE(filename)
-      except Exception as ex:
-         raise ex
-
-      return VObject(daeRawObject, self.__modelShader, self.__normalsShader)
+      Library.mainWindow.glWindow.addVObject(self.__skyBox)
 
    def getVObject(self, name: str):
       rawObject = self.__dataController_o.getRawData(name)
       if rawObject:
          # Convert to OpenGL drawable VOpenGL
          shaderName = rawObject.shaderName
-
-         # return this
-         return VObject(rawObject, self.__modelShader, self.__normalsShader)
+         return VObject(rawObject, self.__modelShader)
       else:
          return None
+
+   def getDAEObject(self, filename:str):
+      try:
+         daeRawObject = RawObject()
+         daeRawObject.loadDAE(filename)
+         return VObject(daeRawObject, self.__modelShader)
+      except Exception as ex:
+         raise ex
+
+   def getMap(self):
+      try:
+         rawMap = RawObject()
+         rawMap.loadMap2(25, 1, "heightMap3.bmp", "earth2.jpg")
+         return VMap(rawMap, MapShader())
+      except Exception as ex:
+         raise ex
+
+   def getLightSource(self, name="testQuad.dae"):
+      try:
+         daeRawObject = RawObject()
+         # Important! inverts normals to be a light
+         daeRawObject.loadDAE("testQuad.dae", True)
+         return VLightSource(daeRawObject, self.__modelShader)
+      except Exception as ex:
+         raise ex
+
+   def getSkyBox(self, cubeMapName="skyBox"):
+      try:
+         rawCube = self.__dataController_o.getRawData("testCube")
+         return VCubeMap(rawCube, CubeMapShader())
+      except Exception as ex:
+         raise ex

@@ -10,17 +10,18 @@ uniform mat4 viewMatrix;
 
 
 out vec2 passTextureCoord;
-out vec3 passTransformedNormalCoord;
+out vec3 passNormalCoord;
 out vec3 passTransformedVertexCoord;
 
 
 void main(void)
 {
     // -- Calculate right position on screen
-    gl_Position = projectionMatrix * viewMatrix * transformMatrix * vec4(vertexCoord, 1.0);
+    vec4 modelTransformation = transformMatrix * vec4(vertexCoord, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * modelTransformation;
 
     // -- Passing texture coords for further processing in fragment shader
     passTextureCoord = textureCoord;
-    passTransformedNormalCoord = vec3(transformMatrix * vec4(normalCoord, 0.0));
-    passTransformedVertexCoord = vec3(transformMatrix * vec4(vertexCoord, 1.0));
+    passNormalCoord = normalCoord;
+    passTransformedVertexCoord = modelTransformation.xyz;
 }

@@ -2,6 +2,8 @@
 
 # System
 import sys
+import string
+import re
 
 # Libraries
 from PyQt5.QtCore import *
@@ -46,7 +48,7 @@ class VWindow(QWidget):
       self._projectionMatrix = None
 
    def getProjectionMatrix(self):
-      self._projectionMatrix = perspective(120.0, self.width() / self.height(), 0.1, 100.0)
+      self._projectionMatrix = perspective(120.0, self.width() / self.height(), 0.1, 1000.0)
       return self._projectionMatrix
 
    def setKeyPressCallback(self, callbackFunc):
@@ -76,30 +78,37 @@ class VWindow(QWidget):
    def keyPressEvent(self, keyEvent: QKeyEvent):
       if self.keyPressCallbackFunc:
          self.keyPressCallbackFunc(keyEvent)
+      self.glWindow.update()
 
    def keyReleaseEvent(self, keyEvent: QKeyEvent):
       if self.keyReleaseCallbackFunc:
          self.keyReleaseCallbackFunc(keyEvent)
+      self.glWindow.update()
 
    def mousePressEvent(self, mouseEvent: QMouseEvent):
       if self.mousePressCallbackFunc:
          self.mousePressCallbackFunc(mouseEvent)
+      self.glWindow.update()
 
    def mouseMoveEvent(self, mouseEvent: QMouseEvent):
       if self.mouseMoveCallbackFunc:
          self.mouseMoveCallbackFunc(mouseEvent)
+      self.glWindow.update()
 
    def mouseReleaseEvent(self, mouseEvent: QMouseEvent):
       if self.mouseReleaseCallbackFunc:
          self.mouseReleaseCallbackFunc(mouseEvent)
+      self.glWindow.update()
 
    def wheelEvent(self, wheelEvent: QWheelEvent):
       if self.mouseWheelCallbackFunc:
          self.mouseWheelCallbackFunc(wheelEvent)
+      self.glWindow.update()
 
    def resizeEvent(self, qResize):
       windowSize = self.frameGeometry()
       self.glWindow.setGeometry(0, 0, windowSize.width(), windowSize.height())
+      self.glWindow.update()
 
    def close(self):
       # self.qTimer.stop()
@@ -123,7 +132,8 @@ class VGLWindow(QGLWidget):
          glEnable(GL_TEXTURE_2D)
          # CLOCKWISE
          glEnable(GL_CULL_FACE)
-
+         glEnable(GL_TEXTURE_CUBE_MAP)
+         QApplication.setKeyboardInputInterval(1)
          print("OpenGL INFO :: \n {0}".format(VGLWindow.getOpenglInfo()))
 
       except Exception as ex:
@@ -132,9 +142,12 @@ class VGLWindow(QGLWidget):
    def paintGL(self):
       try:
          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
          Library.camera.update()
          for obj in self.objects:
             obj.render()
+         if Library.vMap is not None:
+            Library.vMap.render()
          """
          for obj in self.objects:
             obj.renderNormalsVertices()
@@ -158,7 +171,9 @@ class VGLWindow(QGLWidget):
          glGetString(GL_RENDERER),
          glGetString(GL_VERSION),
          glGetString(GL_SHADING_LANGUAGE_VERSION))
-      versionStr = glGetString(GL_SHADING_LANGUAGE_VERSION)
-      VGLWindow.ShaderVersion = 460 # int(glGetString(GL_SHADING_LANGUAGE_VERSION).decode('ascii').replace('.', ''))
+      versionStr : str = glGetString(GL_SHADING_LANGUAGE_VERSION).decode('ascii')
+      versionStr = re.sub("\D", "", versionStr) # \D -> (D)igits
+      print("Version string :: {}".format(versionStr))
+      VGLWindow.ShaderVersion = int(versionStr)
       return info
 

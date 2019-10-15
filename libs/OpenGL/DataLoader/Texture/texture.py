@@ -10,6 +10,9 @@ class Texture:
       fullPath = os.path.join(Texture.TEX_PATH, filename)
       if os.path.isfile(fullPath):
          self.filename = filename
+         glGenerateMipmap(GL_TEXTURE_2D)
+         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.4)
          if self.filename == "characterTexture.png" or self.filename == "mud.png":
             self.vbo = loadTexture(fullPath, GL_RGBA)
          else:

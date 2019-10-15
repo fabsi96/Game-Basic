@@ -2,6 +2,7 @@
 
 import sys
 import os
+import copy
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeyEvent, QMouseEvent, QWheelEvent
@@ -18,15 +19,23 @@ from libs.library import Library
 
 
 class StartView:
-   MOUSE_SPEED = 0.5
+   MOUSE_SPEED = 1.0
    MIN_PITCH = 90
-   MAX_PITCH = 180
+   MAX_PITCH = 270
    MIN_YAW = -170
    MAX_YAW = +170
+   """
+      1) Create VObject and do settings on it
+      2) Set it into map (with collision system) and /- or to 'master'-renderer (vglwindow)
+      3) optional: keep track of it and use it in user-interaction (3rd player view)
+   """
+   # ------------------
    def __init__(self):
+   # ------------------
       try:
          self.models = []
 
+         # Inits#
          self.controller = StartControl()
 
          self.controller.setKeyPressCallback(self.keyPressCallback)
@@ -36,76 +45,49 @@ class StartView:
          self.controller.setMouseMoveCallback(self.mouseMoveCallback)
          self.controller.setMouseWheelCallback(self.mouseWheelCallback)
 
-         """ Light cube    
-         """
-         self.cube = self.controller.getLightSource()
-         self.cube: VLightSource
-         self.controller.addVObject(self.cube)
-         self.models.append(self.cube)
-         self.cube.setScale(tvec3([0.1, 0.1, 0.1]))
-         self.cube.setPosition(tvec3([2.5, 0.5, 2.5]))
-
-         """ Wall mid """
-         self.wallLeft = self.controller.getVObject("testQuad")
-         self.wallLeft: VObject
-         self.controller.addVObject(self.wallLeft)
-         self.models.append(self.wallLeft)
-         currX = self.wallLeft.getPosition().x
-         currY = self.wallLeft.getPosition().y
-         currZ = self.wallLeft.getPosition().z
-         self.wallLeft.setPosition(tvec3([currX + 2.5, currY + 2.5, currZ]))
-         self.wallLeft.setScale(tvec3([2.5, 2.5, 2.5]))
-
-         """ Wall right """
-         self.wallRight = self.controller.getVObject("testQuad")
-         self.wallRight: VObject
-         self.controller.addVObject(self.wallRight)
-         self.models.append(self.wallRight)
-         currX = self.wallRight.getPosition().x
-         currY = self.wallRight.getPosition().y
-         currZ = self.wallRight.getPosition().z
-         self.wallRight.setPosition(tvec3([currX + 5, currY + 2.5, currZ + 2.5]))
-         self.wallRight.setYRotation(270)
-         self.wallRight.setScale(tvec3(2.5, 2.5, 2.5))
-
-         """ Wall left """
-         self.wallMid = self.controller.getVObject("testQuad")
-         self.wallMid: VObject
-         self.controller.addVObject(self.wallMid)
-         self.models.append(self.wallMid)
-         currX = self.wallMid.getPosition().x
-         currY = self.wallMid.getPosition().y
-         currZ = self.wallMid.getPosition().z
-         self.wallMid.setPosition(tvec3([currX, currY + 2.5, currZ + 2.5]))
-         self.wallMid.setYRotation(90)
-         self.wallMid.setScale(tvec3(2.5, 2.5, 2.5))
-
-         """ Dae-Model """
-         self.modelObject = self.controller.getDAEObject("kreuz.dae")
-         self.modelObject: VObject
-         self.controller.addVObject(self.modelObject)
-         self.models.append(self.modelObject)
-         self.modelObject.setPosition(tvec3([.5, 0.0, 0.0]))
-         self._xrotDeg = 0.0
-         self._yrotDeg = 0.0
-         self._zrotDeg = 0.0
-         # Standard rotation
-         # Special, because model is saved in x-UP
-         self.modelObject.setXRotation(270)
-         self.modelObject.setZRotation(180)
-         self.modelObject.setScale(tvec3([0.3, 0.3, 0.3]))
-         Library.camera.followUnit(self.modelObject)
-
-         """ Scale map
-         self.scaleMap = self.controller.getScaleMap("ScaleMap")
-         self.scaleMap: VObject
-         self.controller.addVObject(self.scaleMap)
-         self.scaleMap.setXRotation(90)
-         self.scaleMap.setScale(tvec3(5.0, 5.0, 5.0))
-         """
+         # 1#
          """ Map """
          self.map = self.controller.getMap()
-         self.controller.addVObject(self.map)
+         self.map: VMap
+
+         # Lights
+         # 2.1#
+         self.lightSource = self.controller.getLightSource()
+         self.lightSource: VObject
+         self.lightSource.setPosition(tvec3(2.0, self.map.getHeight(2.0, 2.0) + 0.5, 2.0))
+         self.lightSource.setScale(tvec3(0.1, 0.1, 0.1))
+         self.controller.addVObject(self.lightSource)
+
+         # 2.2#
+         self.ls1: VLightSource = self.controller.getLightSource()
+         self.ls1.setPosition(tvec3(13.18, self.map.getHeight(13.18, 15.00) + 0.5, 15.00))
+         self.ls1.setScale(tvec3(0.1, 0.1, 0.1))
+         self.controller.addVObject(self.ls1)
+
+         # 2.3#
+         self.ls2: VLightSource = self.controller.getLightSource()
+         self.ls2.setPosition(tvec3(11.40, self.map.getHeight(11.40, 4.31) + 0.5, 4.31))
+         self.ls2.setScale(tvec3(0.1, 0.1, 0.1))
+         self.controller.addVObject(self.ls2)
+         
+         # 2.4#
+         self.ls3: VLightSource = self.controller.getLightSource()
+         self.ls3.setPosition(tvec3(14.69, self.map.getHeight(14.69, 6.44) + 0.5, 6.44))
+         self.ls3.setScale(tvec3(0.1, 0.1, 0.1))
+         self.controller.addVObject(self.ls3)
+
+         # 3#
+         """ Duplicate model """
+         self.personModel: VObject = self.controller.getDAEObject("model.dae")
+         self.personModel.setPosition(tvec3(2.5, 0.0, 2.5))
+         self.personModel.setScale(tvec3(0.05, 0.05, 0.05))
+         self.personModel.setXRotation(270)
+         self.personModel.setZRotation(270)
+         self.map.addObject(self.personModel)
+
+         # 4#
+         Library.vMap = self.map
+         Library.camera.followUnit(self.personModel)
 
       except Exception as ex:
          print("{}".format(str(ex)))
@@ -119,47 +101,62 @@ class StartView:
 
 
    def keyPressCallback(self, keyEvent: QKeyEvent):
-      if self.models.__len__() > 0:
-         self.modelObject: VObject
-         if keyEvent.key() == Qt.Key_A:
-            """ Turning object left """
-            self.modelObject.setZRotation(self.modelObject.getZRotation() + 5)
-            # Library.camera.strafeLeft()
-         elif keyEvent.key() == Qt.Key_D:
-            """ Turning object right """
-            self.modelObject.setZRotation(self.modelObject.getZRotation() - 5)
-            # Library.camera.strafeRight()
-         elif keyEvent.key() == Qt.Key_W:
-            """ Moving object forward """
-            tPos = self.modelObject.getPosition()
-            newXPos = tPos.x + sin(radians(self.modelObject.getZRotation())) * VObject.MOVEMENT_SPEED
-            newZPos = tPos.z + cos(radians(self.modelObject.getZRotation())) * VObject.MOVEMENT_SPEED
-            self.modelObject.setPosition(tvec3([newXPos, tPos.y, newZPos]))
-            # Library.camera.moveForward()
-         elif keyEvent.key() == Qt.Key_S:
-            """ Moving object backward """
-            tPos = self.modelObject.getPosition()
-            newXPos = tPos.x - sin(radians(self.modelObject.getZRotation())) * VObject.MOVEMENT_SPEED
-            newZPos = tPos.z - cos(radians(self.modelObject.getZRotation())) * VObject.MOVEMENT_SPEED
-            self.modelObject.setPosition(tvec3([newXPos, tPos.y, newZPos]))
-            # Library.camera.moveBackward()
-         elif keyEvent.key() == Qt.Key_R:
-            Library.camera._pitch = 0.0
-            Library.camera._yaw = 0.0
-            # Library.camera.moveUp()
-         elif keyEvent.key() == Qt.Key_F:
-            pass
-            # Library.camera.moveDown()
-         elif keyEvent.key() == Qt.Key_Escape:
-            pass
-         elif keyEvent.key() == Qt.Key_X:
-            pass
-         elif keyEvent.key() == Qt.Key_Y:
-            pass
-         elif keyEvent.key() == Qt.Key_Z:
-            pass
-         else:
-            print("Key not found :: {}".format(str(keyEvent.key())))
+      if keyEvent.key() == Qt.Key_A:
+         """ Turning object left """
+
+         self.personModel.setZRotation(self.personModel.getZRotation() + 5)
+         """
+         Library.camera.strafeLeft()
+         """
+      elif keyEvent.key() == Qt.Key_D:
+         """ Turning object right """
+
+         self.personModel.setZRotation(self.personModel.getZRotation() - 5)
+         """
+         Library.camera.strafeRight()
+         """
+      elif keyEvent.key() == Qt.Key_W:
+         """ Moving object forward """
+
+         tPos = self.personModel.getPosition()
+         newXPos = tPos.x + sin(radians(self.personModel.getZRotation())) * VObject.MOVEMENT_SPEED
+         newZPos = tPos.z + cos(radians(self.personModel.getZRotation())) * VObject.MOVEMENT_SPEED
+         self.personModel.setPosition(tvec3([newXPos, tPos.y, newZPos]))
+         """
+         Library.camera.moveForward()
+         """
+      elif keyEvent.key() == Qt.Key_S:
+         """ Moving object backward """
+
+         tPos = self.personModel.getPosition()
+         newXPos = tPos.x - sin(radians(self.personModel.getZRotation())) * VObject.MOVEMENT_SPEED
+         newZPos = tPos.z - cos(radians(self.personModel.getZRotation())) * VObject.MOVEMENT_SPEED
+         self.personModel.setPosition(tvec3([newXPos, tPos.y, newZPos]))
+         """
+         Library.camera.moveBackward()
+         """
+      elif keyEvent.key() == Qt.Key_R:
+         pass
+         """
+         Library.camera._pitch = 0.0
+         Library.camera._yaw = 0.0
+         Library.camera.moveUp()
+         """
+      elif keyEvent.key() == Qt.Key_F:
+         pass
+         """
+         Library.camera.moveDown()
+         """
+      elif keyEvent.key() == Qt.Key_Escape:
+         pass
+      elif keyEvent.key() == Qt.Key_X:
+         pass
+      elif keyEvent.key() == Qt.Key_Y:
+         pass
+      elif keyEvent.key() == Qt.Key_Z:
+         pass
+      else:
+         print("Key not found :: {}".format(str(keyEvent.key())))
 
    def keyReleaseCallback(self, keyEvent: QKeyEvent):
       pass
@@ -177,6 +174,23 @@ class StartView:
       deltaY = mouseEvent.y() - self.lastMouseYPos
       deltaVector = tvec2(deltaX, deltaY)
       if self.mouseLeftPressed:
+         """ Free camera - turning around 
+         deltaLength = compute_length(deltaVector)
+         self.lastMouseXPos = mouseEvent.x()
+         self.lastMouseYPos = mouseEvent.y()
+         if deltaLength > 50:
+            return
+         viewDirection = Library.camera.getViewDirection()
+         toRotateAround = cross(viewDirection, Library.camera.getUpVector())
+         rotator = rotate(tmat4x4([]), deltaX * -self.MOUSE_SPEED, Library.camera.getUpVector()) * \
+                   rotate(tmat4x4([]), deltaY * -self.MOUSE_SPEED, toRotateAround)
+
+         viewDirection = tmat3x3(rotator) * viewDirection
+         Library.camera.setViewDirection(viewDirection)
+         """
+
+         """ Follow object calculations - Turning around object     """
+
          deltaLength = compute_length(deltaVector)
          self.lastMouseXPos = mouseEvent.x()
          self.lastMouseYPos = mouseEvent.y()
@@ -206,15 +220,18 @@ class StartView:
             pass
          Library.camera.setYaw(newYaw)
 
+         """ Static - must be updated every time """
          self.lastMouseXPos = mouseEvent.x()
          self.lastMouseYPos = mouseEvent.y()
 
    def mouseWheelCallback(self, wheelEvent: QWheelEvent):
       try:
+         """ Inc/Dec distance from object """
          if wheelEvent.angleDelta().y() > 0:
             Camera.DISTANCE_TO_TARGET -= 0.8
          else:
             Camera.DISTANCE_TO_TARGET += 0.8
+
       except Exception as ex:
          print(str(ex))
 

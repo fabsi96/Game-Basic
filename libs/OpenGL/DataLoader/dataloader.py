@@ -1,95 +1,110 @@
 # encoding: utf-8
 
 # System
-import sys
 import os
-from glm.gtc.matrix_transform import *
 
+# DAL Inner
+from openal import oalGetListener
+
+from libs.OpenGL.DAL.Inner.rawobject import RawObject
 # Libraries
+from libs.OpenGL.DAL.Outer.vblenderparts import VBlenderParts
 from libs.OpenGL.DAL.Outer.vcubemap import VCubeMap
 from libs.OpenGL.DAL.Outer.vlightsource import VLightSource
 from libs.OpenGL.DAL.Outer.vmap import VMap
-from libs.OpenGL.DAL.Outer.vobject import VObject
-from libs.OpenGL.Shader.NormalsShader.normalsshader import NormalsShader
-from libs.OpenGL.Shader.cubeMapShader.cubeMapShader import CubeMapShader
-from libs.OpenGL.Shader.mapShader.mapshader import MapShader
-from libs.OpenGL.Shader.modelShader.modelshader import ModelShader
-
-# DAL Inner
-from libs.OpenGL.DAL.Inner.rawobject import RawObject
-
-# DAL Outer
-
+# Local
+from libs.OpenGL.DAL.Outer.vscalemap import VScaleMap
+from libs.OpenGL.DAL.Outer.vsimpledae import VSimpleDae
+from libs.OpenGL.DAL.Outer.vsimplemap import VSimpleMap
+from libs.OpenGL.DAL.Outer.vsoundbox import VSoundBox
+from libs.OpenGL.DataLoader.sqlitecontrol import DataControl
+from libs.OpenGL.Shader.CubeMapShader.cubeMapShader import CubeMapShader
+from libs.OpenGL.Shader.MapShader.mapshader import MapShader
+from libs.OpenGL.Shader.ModelShader.modelshader import ModelShader
 # Global
-from libs.library import Library
 from settings import *
 
-# Local
-from libs.OpenGL.DataLoader.sqlitecontrol import DataControl
 
-
+# -----------------
 class DataLoader:
-   LIBRARY = dict()
+    """ Summary
+       Main interface between user and objects
+       and objects and its raw data
+       User -> graphics card  -> VOpenGL object -> RAM -> RawObject -> physical data from disk
+    """
+    LIBRARY = dict()
 
-   # Database information
-   DATA_PREFIX = "data"
-   DATA_SUFFIX = ".sqlite"
-   DATA_LOGIN = ""
+    # Database information
+    DATA_PREFIX = "data"
+    DATA_SUFFIX = ".sqlite"
+    DATA_LOGIN = ""
 
-   DEFAULT_SHADER_NAME = "modelShader"
+    DEFAULT_SHADER_NAME = "ModelShader"
 
-   dataInformation_o = None
-   dataController_o = None
+    dataInformation_o = None
+    dataController_o = None
 
-   def __init__(self):
-      self.__dataInformation_o = Settings.dataSettings
-      fullPath_s = os.path.join(os.getcwd(), self.__dataInformation_o["path"])
-      self.__dataController_o = DataControl(fullPath_s, DataLoader.DATA_PREFIX + DataLoader.DATA_SUFFIX)
+    # -----------------
+    def __init__(self):
+        try:
+            self.__dataInformation_o = Settings.dataSettings
+            fullPath_s = os.path.join(os.getcwd(), self.__dataInformation_o["path"])
+            self.__dataController_o = DataControl(fullPath_s, DataLoader.DATA_PREFIX + DataLoader.DATA_SUFFIX)
 
-      self.__modelShader = ModelShader()
+            self.__modelShader = None
+            self.__mapShader = None
+
+        except Exception as ex:
+            print(f"__init__(): DataLoader [ERROR] {ex.args}")
+        # return None
+
+    # -----------------
+    def getSimpleMap(self, mapName: str, length: int, dividor:int, textureFilename: str) -> VSimpleMap or None:
+        rawScaledMap = RawObject()
+        if rawScaledMap.loadMap(length, dividor) == -1:
+            return None
+
+        return VSimpleMap(mapName, rawScaledMap, textureFilename)
+
+    # -----------------
+    def getSimpleDaeObject(self, daeName: str, filename_s: str, texture) -> VSimpleDae or None:
+        rawObject = RawObject()
+        if rawObject.loadDAE(filename_s) == -1:
+            return None
+
+        return VSimpleDae(daeName, rawObject, texture)
+
+    # -----------------
+    def getVCubeMap(self, size_i, textureDir_s) -> VCubeMap or None:
+        rawCube = RawObject()
+        rawCube.loadCube(size_i)
+        if rawCube is None:
+            return None
+
+        return VCubeMap(rawCube, textureDir_s)
 
 
-      self.__skyBox = self.getSkyBox()
+    # -----------------
+    def getSoundBox(self, soundFile_s):
+        rawCube = RawObject()
+        if rawCube.loadDAE("TestQuad/testQuad.dae") == -1:
+            return None
 
-      Library.mainWindow.glWindow.addVObject(self.__skyBox)
+        return VSoundBox(rawCube, "altebirke.jpg", oalGetListener(), soundFile_s, True)
 
-   def getVObject(self, name: str):
-      rawObject = self.__dataController_o.getRawData(name)
-      if rawObject:
-         # Convert to OpenGL drawable VOpenGL
-         shaderName = rawObject.shaderName
-         return VObject(rawObject, self.__modelShader)
-      else:
-         return None
 
-   def getDAEObject(self, filename:str):
-      try:
-         daeRawObject = RawObject()
-         daeRawObject.loadDAE(filename)
-         return VObject(daeRawObject, self.__modelShader)
-      except Exception as ex:
-         raise ex
 
-   def getMap(self):
-      try:
-         rawMap = RawObject()
-         rawMap.loadMap2(25, 1, "heightMap3.bmp", "earth2.jpg")
-         return VMap(rawMap, MapShader())
-      except Exception as ex:
-         raise ex
 
-   def getLightSource(self, name="testQuad.dae"):
-      try:
-         daeRawObject = RawObject()
-         # Important! inverts normals to be a light
-         daeRawObject.loadDAE("testQuad.dae", True)
-         return VLightSource(daeRawObject, self.__modelShader)
-      except Exception as ex:
-         raise ex
 
-   def getSkyBox(self, cubeMapName="skyBox"):
-      try:
-         rawCube = self.__dataController_o.getRawData("testCube")
-         return VCubeMap(rawCube, CubeMapShader())
-      except Exception as ex:
-         raise ex
+
+
+
+
+
+
+
+
+
+
+
+

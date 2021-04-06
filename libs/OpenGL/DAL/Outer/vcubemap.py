@@ -1,118 +1,172 @@
 # encoding: utf-8
 import os
 
-from OpenGL.GL import *
 import numpy as np
+from OpenGL.GL import *
 from PIL import Image
-import pygame
-import cv2
-from glm import tmat4x4
 
-from libs.OpenGL.DAL.Outer.vobject import VOpenGL
-from libs.OpenGL.DataLoader.Texture.texture import Texture
+from libs.OpenGL.DAL.Inner.rawobject import RawObject
+from libs.OpenGL.DAL.Outer.vopengl import VOpenGL
+from libs.OpenGL.Shader.CubeMapShader.cubeMapShader import CubeMapShader
 from libs.library import Library
 
+"""
+    Documentation of the correct alignment of pictures in the cubemap
 
+"""
+
+
+# ----------------------------------------
 class VCubeMap(VOpenGL):
-   SIZE = 100
-   VERTICES = [
-       -SIZE,  SIZE, -SIZE,
-	    -SIZE, -SIZE, -SIZE,
-	     SIZE, -SIZE, -SIZE,
-	     SIZE, -SIZE, -SIZE,
-	     SIZE,  SIZE, -SIZE,
-	    -SIZE,  SIZE, -SIZE,
+    """ Summary
+       Generates a cube map with a
+       * basic box (cube)
+       * six ordered textures for correct translation into shader
+    """
+    # TODO: Loaded in RawObject
+    SIZE = 100
+    VERTICES = [
+        -SIZE, SIZE, -SIZE,
+        -SIZE, -SIZE, -SIZE,
+        SIZE, -SIZE, -SIZE,
+        SIZE, -SIZE, -SIZE,
+        SIZE, SIZE, -SIZE,
+        -SIZE, SIZE, -SIZE,
 
-	    -SIZE, -SIZE,  SIZE,
-	    -SIZE, -SIZE, -SIZE,
-	    -SIZE,  SIZE, -SIZE,
-	    -SIZE,  SIZE, -SIZE,
-	    -SIZE,  SIZE,  SIZE,
-	    -SIZE, -SIZE,  SIZE,
+        -SIZE, -SIZE, SIZE,
+        -SIZE, -SIZE, -SIZE,
+        -SIZE, SIZE, -SIZE,
+        -SIZE, SIZE, -SIZE,
+        -SIZE, SIZE, SIZE,
+        -SIZE, -SIZE, SIZE,
 
-	     SIZE, -SIZE, -SIZE,
-	     SIZE, -SIZE,  SIZE,
-	     SIZE,  SIZE,  SIZE,
-	     SIZE,  SIZE,  SIZE,
-	     SIZE,  SIZE, -SIZE,
-	     SIZE, -SIZE, -SIZE,
+        SIZE, -SIZE, -SIZE,
+        SIZE, -SIZE, SIZE,
+        SIZE, SIZE, SIZE,
+        SIZE, SIZE, SIZE,
+        SIZE, SIZE, -SIZE,
+        SIZE, -SIZE, -SIZE,
 
-	    -SIZE, -SIZE,  SIZE,
-	    -SIZE,  SIZE,  SIZE,
-	     SIZE,  SIZE,  SIZE,
-	     SIZE,  SIZE,  SIZE,
-	     SIZE, -SIZE,  SIZE,
-	    -SIZE, -SIZE,  SIZE,
+        -SIZE, -SIZE, SIZE,
+        -SIZE, SIZE, SIZE,
+        SIZE, SIZE, SIZE,
+        SIZE, SIZE, SIZE,
+        SIZE, -SIZE, SIZE,
+        -SIZE, -SIZE, SIZE,
 
-	    -SIZE,  SIZE, -SIZE,
-	     SIZE,  SIZE, -SIZE,
-	     SIZE,  SIZE,  SIZE,
-	     SIZE,  SIZE,  SIZE,
-	    -SIZE,  SIZE,  SIZE,
-	    -SIZE,  SIZE, -SIZE,
+        -SIZE, SIZE, -SIZE,
+        SIZE, SIZE, -SIZE,
+        SIZE, SIZE, SIZE,
+        SIZE, SIZE, SIZE,
+        -SIZE, SIZE, SIZE,
+        -SIZE, SIZE, -SIZE,
 
-	    -SIZE, -SIZE, -SIZE,
-	    -SIZE, -SIZE,  SIZE,
-	     SIZE, -SIZE, -SIZE,
-	     SIZE, -SIZE, -SIZE,
-	    -SIZE, -SIZE,  SIZE,
-	     SIZE, -SIZE,  SIZE]
+        -SIZE, -SIZE, -SIZE,
+        -SIZE, -SIZE, SIZE,
+        SIZE, -SIZE, -SIZE,
+        SIZE, -SIZE, -SIZE,
+        -SIZE, -SIZE, SIZE,
+        SIZE, -SIZE, SIZE]
 
-   def __init__(self, rawObject, shaderProg):
-      try:
-         rawObject.vertexCoords = VCubeMap.VERTICES
-         rawObject.normalCoords = []
-         rawObject.textureCoords = []
-         rawObject.textureFiles = []
-         rawObject.renderMode = "ARRAYS"
-         # Correct order! Right - Left - Top - Bottom - Back - Front
-         rawObject.textureFiles.append("right.png")
-         rawObject.textureFiles.append("left.png")
-         rawObject.textureFiles.append("top.png")
-         rawObject.textureFiles.append("bottom.png")
-         rawObject.textureFiles.append("back.png")
-         rawObject.textureFiles.append("front.png")
-         super(VCubeMap, self).__init__(rawObject, shaderProg)
-         self.sp.loadMatrix4x4("projectionMatrix")
-         self.sp.loadMatrix4x4("viewMatrix")
+    # ----------------------------------------
+    def __init__(self, rawCube: RawObject, cubeMapType="sky"):
+        try:
+            # Correct order! Right - Left - Top - Bottom - Back - Front
+            super(VCubeMap, self).__init__("SkyMap", CubeMapShader(), VOpenGL.RENDER_ARRAYS)
 
-         self.__uploadCubeMap("sky", rawObject.textureFiles)
+            self.vao = glGenVertexArrays(1)
+            self.vertexVbo = self.uploadVertexData(self.vao,
+                                                   rawCube.vertexCoords,
+                                                   self.sp,
+                                                   CubeMapShader.VERTICES_NAME,
+                                                   3)
+            self.vertexCount = len(rawCube.vertexCoords)
 
-      except Exception as ex:
-         print(str(ex))
+            self.cubeTexID = -1
+            self.textureFiles = []
+            fileType_s = "png"
+            self.textureFiles.append("right." + fileType_s)
+            self.textureFiles.append("left." + fileType_s)
+            self.textureFiles.append("top." + fileType_s)
+            self.textureFiles.append("bottom." + fileType_s)
+            self.textureFiles.append("back." + fileType_s)
+            self.textureFiles.append("front." + fileType_s)
 
-   def __uploadCubeMap(self, cubeMapFolder, filesOrder):
-      # Upload cubemap textures
-      self.sp.start()
-      self.cubeTexID = glGenTextures(1)
-      glActiveTexture(GL_TEXTURE0)
-      glBindTexture(GL_TEXTURE_CUBE_MAP, self.cubeTexID)
-      for i in range(0, 6):
-         fullPath = os.path.join("data/res", cubeMapFolder, filesOrder[i])
-         image_rgb = Image.open(fullPath)
-         image_rgba = image_rgb.convert("RGBA")
-         img_data = np.array(image_rgba.getdata())
-         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, image_rgba.width, image_rgba.height, 0, GL_RGBA,
-                      GL_UNSIGNED_BYTE, img_data)
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-      glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE)
-      glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE)
-      glTexParameteri(GL_TEXTURE_CUBE_MAP,GL_TEXTURE_WRAP_R,GL_CLAMP_TO_EDGE)
-      self.sp.stop()
+            self.__uploadCubeMap(cubeMapType, self.textureFiles)
 
-   def render(self):
-      self.sp.start()
-      glBindVertexArray(self.vao)
-      glBindBuffer(GL_ARRAY_BUFFER, self.vertexVbo)
+        except Exception as ex:
+            print(str(ex))
 
-      self.sp.setMatrix4x4("projectionMatrix", Library.mainWindow.getProjectionMatrix())
-      viewMatrix: tmat4x4 = Library.camera.getWorldToViewMatrix()
-      self.sp.setMatrix4x4("viewMatrix", viewMatrix)
-      glActiveTexture(GL_TEXTURE0)
-      glBindTexture(GL_TEXTURE_CUBE_MAP, self.cubeTexID)
-      glDrawArrays(GL_TRIANGLES, 0, self.vertexCount)
+    # ----------------------------------------
+    def __uploadCubeMap(self, cubeMapFolder: str, filesOrder: list) -> None:
+        try:
+            # Upload cubemap textures
+            self.sp.start()
+            self.cubeTexID = glGenTextures(1)
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_CUBE_MAP, self.cubeTexID)
+            for i in range(0, 6):
+                fullPath = os.path.join("data/res", cubeMapFolder, filesOrder[i])
+                image: Image = Image.open(fullPath)
+                # img = pygame.image.load(fullPath).convert_alpha()
 
-      glBindVertexArray(0)
-      self.sp.stop()
+                image_rgba = image.convert("RGBA")
+                # image_rgb = image.convert("RGB")
 
+                img_rgba_data = np.array(image_rgba.getdata())
+
+                # img_rgb_data = np.array(image_rgb.getdata())
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                             0,
+                             GL_RGBA,
+                             image_rgba.width,
+                             image_rgba.height,
+                             0,
+                             GL_RGBA,
+                             GL_UNSIGNED_BYTE,
+                             img_rgba_data)
+
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)
+
+            self.sp.stop()
+
+        except Exception as ex:
+            print(f"__uploadCubeMap - CubeMap Error {ex.args}")
+
+        """
+                        from datetime import datetime
+                beforeLoading_o = datetime.now()
+                afterLoading_o = datetime.now()
+                loadingTime_o = afterLoading_o - beforeLoading_o
+                loadingTime_seoncds = loadingTime_o.total_seconds()
+                print(f"[DEBUG] ('{fullPath}' Mb / '{loadingTime_seoncds}' sec) ")
+
+        """
+
+    # ----------------------------------------
+    def render(self) -> None:
+        try:
+            self.sp.start()
+            glBindVertexArray(self.vao)
+            if self.renderMode == VOpenGL.RENDER_ARRAYS:
+                glBindBuffer(GL_ARRAY_BUFFER, self.vertexVbo)
+
+                self.sp.setMatrix4x4(CubeMapShader.PROJECTION_MATRIX_NAME,
+                                     Library.mainWindow.getProjectionMatrix())
+                self.sp.setMatrix4x4(CubeMapShader.VIEW_MATRIX_NAME,
+                                     Library.camera.getWorldToViewMatrix())
+                glActiveTexture(GL_TEXTURE0)
+                glBindTexture(GL_TEXTURE_CUBE_MAP, self.cubeTexID)
+                glDrawArrays(GL_TRIANGLES, 0, self.vertexCount)
+            else:
+                print(f"render: VCubeMap [ERROR] Render Mode not found !")
+
+            glBindVertexArray(0)
+            self.sp.stop()
+
+        except Exception as ex:
+            print(f"render: VCubeMap [ERROR] {ex.args}")

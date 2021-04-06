@@ -1,378 +1,423 @@
 # encoding: utf-8
+from datetime import datetime
+from glm import *
 
-import os
-
-import numpy as np
-from OpenGL.GL import *
 from PIL import Image
-from collada import Collada
-from glm.gtc.matrix_transform import *
+from pyassimp import *
+# -----------------
+from pyassimp.postprocess import *
+from pyassimp.structs import *
 
+
+# -----------------
 class RawObject:
-   VERTEXVERTICES = 3
-   MAX_HEIGHT = 2
-   MAX_PIXEL_COMPONENT = 256
-   MAX_PIXEL_COLOR = MAX_PIXEL_COMPONENT * MAX_PIXEL_COMPONENT * MAX_PIXEL_COMPONENT
+    """ Summary
+       Loads OpenGL Data into RAM. Specific arrays (numpy-arrays)
+       Always 'returns' itself as data-object.
+    """
+    VERTEXVERTICES = 3
+    MAX_HEIGHT = 1.5
+    MAX_PIXEL_COMPONENT = 256
+    MAX_PIXEL_COLOR = MAX_PIXEL_COMPONENT * MAX_PIXEL_COMPONENT * MAX_PIXEL_COMPONENT
 
-   DATA_DIR = "data"
-   def __init__(self):
-      self.name = ""
-      self.renderMode = "ELEMENTS"
+    # -----------------
+    def __init__(self):
+        self.name = ""
+        self.renderMode = ""
 
-      self.vertexCoords = []
-      self.indices = []
-      self.textureCoords = []
-      self.normalCoords = []
-      self.textureFiles = []
+        """ Single vertex objects """
+        self.vertexCoords = []
+        self.indices = []
+        self.textureCoords = []
+        self.normalCoords = []
+        self.textureFiles = []
 
-      self.shaderName = ""
+        """ Multiple meshes objects """
+        self.verticesMeshes = []
+        self.normalsMeshes = []
+        self.texturesMeshes = []
+        self.textureFilesMeshes = []
+        self.indicesMeshes = []
 
-      self.mapSize = -1
-      self.mapHeights = {}
-      self.stepSize = -1
+        self.shaderName = ""
 
-   def loadDAE(self, filename: str, isLight=False):
-      fullPath = os.path.join(RawObject.DATA_DIR, filename)
-      if os.path.isfile(fullPath):
-         modelVertices = []
-         modelIndices = []
+        """ Map - attributes """
+        self.mapSize = -1
+        self.mapHeights = {}
+        self.stepSize = -1
 
-         modelNormals = []
-         modelNormalsIndices = []
-         modelTextures = []
-         modelTexturesIndices = []
+    def loadCube(self, SIZE=100):
+        self.vertexCoords = [
+            -SIZE, SIZE, -SIZE,
+            -SIZE, -SIZE, -SIZE,
+            SIZE, -SIZE, -SIZE,
+            SIZE, -SIZE, -SIZE,
+            SIZE, SIZE, -SIZE,
+            -SIZE, SIZE, -SIZE,
 
-         daeVertices = []
-         daeIndices = []
-         daeNormals = []
-         daeNormalsIndices = []
-         daeTextures = []
-         daeTexturesIndices = []
+            -SIZE, -SIZE, SIZE,
+            -SIZE, -SIZE, -SIZE,
+            -SIZE, SIZE, -SIZE,
+            -SIZE, SIZE, -SIZE,
+            -SIZE, SIZE, SIZE,
+            -SIZE, -SIZE, SIZE,
 
-         try:
-            dae = Collada(os.path.join("data", filename))
-            modelImages = []
-            for texFile in dae.images:
-               modelImages.append(texFile.path)
-            for geom in dae.geometries:
-               daeVertices = geom.primitives[0].vertex.tolist()
-               daeIndices = list(geom.primitives[0].vertex_index)
+            SIZE, -SIZE, -SIZE,
+            SIZE, -SIZE, SIZE,
+            SIZE, SIZE, SIZE,
+            SIZE, SIZE, SIZE,
+            SIZE, SIZE, -SIZE,
+            SIZE, -SIZE, -SIZE,
 
-               daeNormals = geom.primitives[0].normal.tolist()
-               daeNormalsIndices = list(geom.primitives[0].normal_index)
+            -SIZE, -SIZE, SIZE,
+            -SIZE, SIZE, SIZE,
+            SIZE, SIZE, SIZE,
+            SIZE, SIZE, SIZE,
+            SIZE, -SIZE, SIZE,
+            -SIZE, -SIZE, SIZE,
 
-               daeTextures = geom.primitives[0].texcoordset[0].tolist()
-               daeTexturesIndices = list(geom.primitives[0].texcoord_indexset[0])
+            -SIZE, SIZE, -SIZE,
+            SIZE, SIZE, -SIZE,
+            SIZE, SIZE, SIZE,
+            SIZE, SIZE, SIZE,
+            -SIZE, SIZE, SIZE,
+            -SIZE, SIZE, -SIZE,
 
+            -SIZE, -SIZE, -SIZE,
+            -SIZE, -SIZE, SIZE,
+            SIZE, -SIZE, -SIZE,
+            SIZE, -SIZE, -SIZE,
+            -SIZE, -SIZE, SIZE,
+            SIZE, -SIZE, SIZE]
 
-         except Exception as ex:
-            raise ex
-         modelVertices.clear()
-         for i in daeVertices:
-            modelVertices.append(i[0])
-            modelVertices.append(i[1])
-            modelVertices.append(i[2])
-         for i in daeNormals:
-            if isLight is True:
-               modelNormal = tvec3(i[0],i[1],i[2])
-               inverseNormal = tvec3(0.0, 0.0, 0.0) - modelNormal
-               modelNormals.append(inverseNormal.x)
-               modelNormals.append(inverseNormal.y)
-               modelNormals.append(inverseNormal.z)
+    DATA_DAE_DIR = "data/dae"
+
+    # -----------------
+    def loadDAE(self, filename: str, isLight=False) -> int:
+        fullPath_s = os.path.join(RawObject.DATA_DAE_DIR, filename)
+        if not os.path.isfile(fullPath_s):
+            return -1
+
+        modelVertices = []
+        modelIndices = []
+
+        modelNormals = []
+        modelNormalsIndices = []
+        modelTextures = []
+        modelTexturesIndices = []
+
+        daeVertices = []
+        daeIndices = []
+        daeNormals = []
+        daeNormalsIndices = []
+        daeTextures = []
+        daeTexturesIndices = []
+
+        # Load data from .dae - file
+        modelImages = []
+
+        try:
+            """
+                Parts := shape_o.meshes
+                vertices := shape_o.meshes[i].vertices
+                normals := shape_o.meshes[i].normals
+                vertices := shape_o.meshes[i].texturecoords
+                indices := shape_o.meshes[i].faces
+                textureFiles := shape_o.textures
+            """
+            shape_o: Scene = load(filename=fullPath_s, processing=aiProcess_Triangulate)
+
+            # Load only the first mesh into memory
+            for currShape in shape_o.meshes:
+                daeVertices = currShape.vertices
+                daeNormals = currShape.normals
+                daeTextures = currShape.texturecoords
+                daeIndices = currShape.faces
+                break
+
+            # TODO: Correct material loading (images)
+            for material in shape_o.materials:
+                pass
+                # print(f"Material :: {material}")
+                """
+                for key,value in material.properties.items():
+                    # print(f"Key {key} / Value {value}")
+                    if key == "file":
+                        modelImages.append(value)
+                """
+
+            # Vertices -> DAE transformation Blender -> OpenGL ???
+            for i in daeVertices:
+                modelVertices.append(i[0])  # x
+                modelVertices.append(i[2])  # y
+                modelVertices.append(i[1])  # z
+
+            # Normals
+            for i in daeNormals:
+                if isLight is True:
+                    # TODO: Correct normal calculaton
+                    modelNormal = vec3(i[0], i[1], i[2])
+                    modelNormals.append(modelNormal.x * -1)
+                    modelNormals.append(modelNormal.y * -1)
+                    modelNormals.append(modelNormal.z * -1)
+                else:
+                    modelNormals.append(i[0])
+                    modelNormals.append(i[2])
+                    modelNormals.append(i[1])
+
+            # Textures
+            for data in daeTextures:
+                for textureVertex in data:
+                    modelTextures.append(textureVertex[0])
+                    modelTextures.append(textureVertex[1])
+
+            # Clean up loaded scene
+            release(shape_o)
+
+        except AssimpError as ex:
+            print(f"loadDAE: RawObject [ERROR] Assimp exception {ex.args}")
+            return -1
+
+        except Exception as ex:
+            print(f"loadDAE: RawObject [ERROR] {ex.args}")
+            return -1
+
+        try:
+            # --- Summarize all data
+            self.vertexCoords = modelVertices
+            self.normalCoords = modelNormals
+            self.textureCoords = modelTextures
+            if len(modelIndices) > 0:
+                self.indices = modelIndices
+                self.renderMode = "ELEMENTS"
             else:
-               modelNormals.append(i[0])
-               modelNormals.append(i[1])
-               modelNormals.append(i[2])
-         for data in daeTextures:
-            modelTextures.append(data[0])
-            modelTextures.append(data[1])
+                self.renderMode = "ARRAYS"
+            self.name = fullPath_s
+            self.textureFiles = modelImages
+            if self.textureFiles.__len__() == 0:
+                self.textureFiles.append("path.jpg")
 
+            """
+            beforeLoading_o = datetime.now()
+            afterLoading_o = datetime.now()
+            loadingTime_o = afterLoading_o - beforeLoading_o
+            loadingTime_seoncds = loadingTime_o.total_seconds()
+            print(f"loadMap: RawObject [DEBUG] ('' Mb / '{loadingTime_seoncds}' sec) ")
+            """
+            return 1
 
-         if type(daeIndices[0]) is not np.ndarray and type(daeIndices[0]) is not list:
-            modelIndices = daeIndices
-            modelNormalsIndices = daeNormalsIndices
-            modelTexturesIndices = daeTexturesIndices
-         else:
-            for data in daeIndices:
-               modelIndices.append(data[0])
-               modelIndices.append(data[1])
-               modelIndices.append(data[2])
-            for data in daeNormalsIndices:
-               modelNormalsIndices.append(data[0])
-               modelNormalsIndices.append(data[1])
-               modelNormalsIndices.append(data[2])
-            for data in daeTexturesIndices:
-               modelTexturesIndices.append(data[0])
-               modelTexturesIndices.append(data[1])
-               modelTexturesIndices.append(data[2])
+        except Exception as ex:
+            print(f"loadDAE: RawObject [ERROR] {ex.args}")
+            return -1
 
-         modelVertices, modelNormals, modelTextures = RawObject.triangulateDaeIndices(modelVertices, modelNormals,
-                                                                                      modelTextures,
-                                                                                      modelIndices, modelNormalsIndices,
-                                                                                      modelTexturesIndices)
+    def loadBlenderMultipleParts(self, filename_s: str, textureFiles_l: list):
+        fullPath_s = os.path.join(RawObject.DATA_DAE_DIR, filename_s)
+        if not os.path.isfile(fullPath_s):
+            return -1
 
-         self.vertexCoords = np.array(modelVertices, dtype=np.float32)
-         self.normalCoords = np.array(modelNormals, dtype=np.float32)
-         self.textureCoords = np.array(modelTextures, dtype=np.float32)
-         # self.indices = np.array(modelIndices, dtype=GLuint)
-         self.renderMode = "ARRAYS"
+        modelVertices = []
+        modelNormals = []
+        modelTextures = []
+        modelIndices = []
 
-         self.name = filename
-         self.textureFiles = modelImages
+        # Load data from .dae - file
+        modelImages = []
 
-   @staticmethod
-   def sortVertices(modelVertices, modelNormals, modelTextures, modelIndices, modelTextureIndices, modelNormalsIndices = None):
-      processedIndices = []
-      newModelTextures = []
-      for i in range(0, len(modelTextures)):
-         newModelTextures.append(0)
+        try:
+            print(f"loadBlenderMultipleParts: RawObject [DEBUG] Loading '{fullPath_s}'")
+            import datetime
+            before = datetime.datetime.now()
+            shape_o: Scene = load(filename=fullPath_s, processing=aiProcess_FlipUVs |
+                                                                  aiProcess_GenNormals |
+                                                                  aiProcess_Triangulate)
+            after = datetime.datetime.now()
+            elapsedTime = after - before
+            elapsedSeconds_f = elapsedTime.total_seconds()
+            print(f"loadBlenderMultipleParts: RawObject [DEBUG] Elapsed time {elapsedSeconds_f}")
 
-      for i in range(0, int(len(modelTextures) / 2)):
-         vIndex = modelIndices[i]
-         tIndex = modelTextureIndices[i]
+            meshVertices = []
+            meshNormals = []
+            meshTextures = []
+            meshIndices = []
+            for currShape in shape_o.meshes:
+                meshVertices = currShape.vertices
+                meshNormals = currShape.normals
+                meshTextures = currShape.texturecoords
+                meshIndices = currShape.faces
 
-         exists = False
-         for j in range(0, len(processedIndices)):
-            if processedIndices[j] == vIndex:
-               exists = True
+                # Vertices -> DAE transformation Blender -> OpenGL ???
+                for i in meshVertices:
+                    modelVertices.append(i[0])  # x
+                    modelVertices.append(i[2])  # y
+                    modelVertices.append(i[1])  # z
+                self.verticesMeshes.append(list(modelVertices))
+                modelVertices.clear()
 
-         if not exists:
-            targetTextureCoord = [modelTextures[(tIndex * 2)], modelTextures[(tIndex * 2) + 1]]
-            tmpTextureCoord = [modelTextures[(vIndex * 2)], modelTextures[(vIndex * 2) + 1]]
-            newModelTextures[(vIndex * 2)] = targetTextureCoord[0]
-            newModelTextures[(vIndex * 2) + 1] = targetTextureCoord[1]
-            modelTextures[(tIndex * 2)] = tmpTextureCoord[0]
-            modelTextures[(tIndex * 2) + 1] = tmpTextureCoord[1]
-            processedIndices.append(vIndex)
-         else:
-            targetTextureCoord = [modelVertices[(vIndex * 3)], modelVertices[(vIndex * 3) + 1], modelVertices[(vIndex * 3) + 2]]
+                # Normals
+                for i in meshNormals:
+                    modelNormals.append(i[0])
+                    modelNormals.append(i[2])
+                    modelNormals.append(i[1])
+                self.normalsMeshes.append(list(modelNormals))
+                modelNormals.clear()
 
-            modelVertices.append(targetTextureCoord[0])
-            modelVertices.append(targetTextureCoord[1])
-            modelVertices.append(targetTextureCoord[2])
+                # Textures
+                for data in meshTextures:
+                    for textureVertex in data:
+                        modelTextures.append(textureVertex[0])
+                        modelTextures.append(textureVertex[1])
+                self.texturesMeshes.append(list(modelTextures))
+                modelTextures.clear()
 
-            newIndex = int(((len(modelVertices) + 3) / 3)) - 2
+                # Indices
+                self.indicesMeshes.append(meshIndices)
 
-            modelIndices[i] = newIndex
+                # END Mesh[i]
 
+            # Clean up loaded scene
+            release(shape_o)
 
-            newModelTextures[(newIndex * 2)] = modelTextures[(tIndex * 2)]
-            newModelTextures[(newIndex * 2) + 1] = modelTextures[(tIndex * 2) + 1]
+        except AssimpError as ex:
+            print(f"loadDAE: RawObject [ERROR] Assimp exception {ex.args}")
+            return -1
 
-      return modelVertices, modelNormals, newModelTextures, modelIndices
+        except Exception as ex:
+            print(f"loadDAE: RawObject [ERROR] {ex.args}")
+            return -1
 
-   @staticmethod
-   def triangulateDaeIndices(modelVertices, modelNormals, modelTextures, modelVerticesIndex, modelNormalsIndex, modelTexturesIndex):
-      newModelVertices = []
-      newModelNormals = []
-      newModelTextures = []
+        try:
+            # --- Summarize all data
+            self.vertexCoords = modelVertices
+            self.normalCoords = modelNormals
+            self.textureCoords = modelTextures
+            self.renderMode = "ELEMENTS"
+            self.name = fullPath_s
+            self.textureFiles = textureFiles_l
 
-      # Implied that model have more texture coords than others
-      for i in range(0, len(modelVerticesIndex)): #)-(3*1256)
-         # 0, 1, 2, ... point-for-point (punkt für punkt)
-         currentVertex  = [modelVertices[modelVerticesIndex[i]*3], modelVertices[modelVerticesIndex[i]*3+1], modelVertices[modelVerticesIndex[i]*3+2]]
-         currentNormal  = [modelNormals[modelNormalsIndex[i]*3], modelNormals[modelNormalsIndex[i]*3+1], modelNormals[modelNormalsIndex[i]*3+2]]
-         currentTexture = [modelTextures[modelTexturesIndex[i]*2], modelTextures[modelTexturesIndex[i]*2+1]]
-         for v in currentVertex:
-            newModelVertices.append(v)
-         for n in currentNormal:
-            newModelNormals.append(n)
-         for t in currentTexture:
-            newModelTextures.append(t)
+            return 1
 
+        except Exception as ex:
+            print(f"loadDAE: RawObject [ERROR] {ex.args}")
+            return -1
 
-      return newModelVertices, newModelNormals, newModelTextures
+    # -----------------
+    @staticmethod
+    def BarryCentric(p1: vec3, p2: vec3, p3: vec3, pos: vec2) -> float:
+        det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z)
+        l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det
+        l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det
+        l3 = 1.0 - l1 - l2
+        return l1 * p1.y + l2 * p2.y + l3 * p3.y
 
-   def loadScaleMap(self, mapName: str):
-      vertices = [0.0, 0.0, 0.0,
-                  0.0, 1.0, 0.0,
-                  1.0, 0.0, 0.0,
-                  1.0, 1.0, 0.0]
-      normals = [0.0, 0.0, -1.0,
-                 0.0, 0.0, -1.0,
-                 0.0, 0.0, -1.0,
-                 0.0, 0.0, -1.0]
-      textures = [0.0, 0.0,
-                  0.0, 1.0,
-                  1.0, 0.0,
-                  1.0, 1.0]
-      indices = [0, 1, 2, 1, 3, 2]
+    DATA_HEIGHT_MAPS_DIR = "data/res/height_maps"
+    DATA_PATH_MAPS_DIR = "data/res/path_maps"
 
-      self.vertexCoords = np.array(vertices, dtype=np.float32)
-      self.normalCoords = np.array(normals, dtype=np.float32)
-      self.textureCoords = np.array(textures, dtype=np.float32)
-      self.indices = np.array(indices, dtype=GLuint)
+    # -----------------
+    def loadMap(self, mapSize=10, mapDividor=1, heightMap="", pathMap="") -> int:
+        if mapDividor > 16:
+            # print(f"loadMap: RawObject [ERROR] Too high mapdividor")
+            return -1
 
-      # TODO
-      self.name = mapName
-      self.textureFiles.append("mud.png")
+        fullHeightMapPath_s = os.path.join(RawObject.DATA_HEIGHT_MAPS_DIR, heightMap)
+        isHeightMapFile = os.path.isfile(fullHeightMapPath_s)
+        image = None
+        if isHeightMapFile:
+            image = Image.open(fullHeightMapPath_s)
+        else:
+            # print(f"loadMap: RawObject [DEBUG] Could not find height map.")
+            pass
 
-   @staticmethod
-   def BarryCentric(p1: tvec3, p2: tvec3, p3: tvec3, pos: tvec2):
-      det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z)
-      l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det
-      l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det
-      l3 = 1.0 - l1 - l2
-      return l1 * p1.y + l2 * p2.y + l3 * p3.y
+        fullPathMapPath_s = os.path.join(RawObject.DATA_PATH_MAPS_DIR, pathMap)
+        isPathFile = os.path.isfile(fullPathMapPath_s)
+        if isPathFile:
+            self.textureFiles.append(pathMap)
+        else:
+            # print(f"loadMap: RawObject [DEBUG] Could not find pathmap.")
+            pass
 
-   def loadMap(self, mapSize, mapDividor, heightMapFilename, pathMapFilename):
-      self.mapHeights = {}
-      self.mapSize = mapSize
+        # Geometry helper
+        stepSize = 1 / mapDividor
+        xRunner = 0
+        zRunner = 0
+        while zRunner <= mapSize:
+            self.mapHeights[zRunner] = {}
+            while xRunner <= mapSize:
+                """ Calculate height at this point """
+                roundedHeight_f = 0.0
+                currentNormal = vec3(0.0, 1.0, 0.0)
+                if image is not None:
+                    height_f = float(self.__getHeight(image, mapSize, xRunner, zRunner))
+                    roundedHeight_s = "{:.5f}".format(height_f)
+                    roundedHeight_f = float(roundedHeight_s)
+                    currentNormal: vec3 = self.__calcNormal(image, mapSize, xRunner, zRunner)
 
-      vertices = []
-      textures = []
-      indices = []
-      size = mapSize
-      dividor = mapDividor
-      heightMapFilename = heightMapFilename
-      # load image
-      image = Image.open("data/res/" + heightMapFilename)
+                self.vertexCoords.append(xRunner)
+                self.vertexCoords.append(roundedHeight_f)
+                self.vertexCoords.append(zRunner)
+                self.mapHeights[zRunner][xRunner] = roundedHeight_f
 
-      # check size gerade und dividor 2^n
-      polyFactor = size / dividor
-      i = 0
-      j = 0
-      while i <= size:
-         self.mapHeights[i] = {}
-         while j <= size:
-            # Multi-mapped
-            div = image.width / mapSize
-            xCoord = int(j * div)
-            yCoord = int(i * div)
-            # --
-            height = self.__getHeight(image, xCoord, yCoord)
-            vertices.append(j)  # x
-            vertices.append(0.0)  # y
-            vertices.append(i)  # z
-            self.mapHeights[i][j] = height
+                self.normalCoords.append(currentNormal.x)
+                self.normalCoords.append(currentNormal.y)
+                self.normalCoords.append(currentNormal.z)
 
-            textures.append(j / size)
-            textures.append(i / size)
-            j += polyFactor
-         j = 0
-         i += polyFactor
-      runner = 0
-      for k in range(0, dividor - 1):
-         for l in range(0, dividor - 1):
-            indices.append(runner)
-            indices.append(runner + 1)
-            indices.append(runner + 2 + dividor)
+                self.textureCoords.append((xRunner / (mapSize + 1)))  # x
+                self.textureCoords.append((zRunner / (mapSize + 1)))  # y
 
-            indices.append(runner)
-            indices.append(runner + dividor + 1)
-            indices.append(runner + dividor + 2)
-            runner += 1
-         runner += 2
+                xRunner = xRunner + stepSize
+            xRunner = 0
+            zRunner = zRunner + stepSize
 
+        vertexCountPerSite = int(mapSize / stepSize)
+        i = 0
+        runner = 0
+        j = 0
+        # Indices works
+        while j <= vertexCountPerSite - 1:
+            while i <= vertexCountPerSite - 1:
+                self.indices.append(runner + vertexCountPerSite + 1)
+                self.indices.append(runner + 1)
+                self.indices.append(runner)
 
-      self.vertexCoords = vertices
-      self.textureCoords = textures
-      self.indices = indices
-      self.renderMode = "ELEMENTS"
-      self.textureFiles.append(pathMapFilename)
+                self.indices.append(runner + vertexCountPerSite + 1)
+                self.indices.append(runner + vertexCountPerSite + 2)
+                self.indices.append(runner + 1)
 
-   def __getHeight(self, image: Image, x: int, y: int):
-      if x < 0 or x >= image.width or y < 0 or y >= image.height:
-         return 0
-      try:
-         r, g, b = image.getpixel((x, y))
-      except:
-         print("Range value : {0}/{1}".format(x, y))
-      height = r * g * b
-      height = -height
-      height += self.MAX_PIXEL_COLOR / 2.0
-      height /= self.MAX_PIXEL_COLOR / 2.0
-      height *= self.MAX_HEIGHT
+                i = i + 1
+                runner = runner + 1
 
-      return height
-
-   def loadMap2(self, mapSize=10, mapDividor=1, heightMap="", pathMap=""):
-
-      if mapDividor > 16:
-         raise Exception("Too high mapdividor")
-      # load image
-      if os.path.isfile(os.path.join("data/res", pathMap)):
-         image = Image.open("data/res/" + heightMap)
-      else:
-         raise Exception("Could not find pathmap")
-      self.textureFiles.append(pathMap)
-      # Geometry helper
-      stepSize = 1 / mapDividor
-      x = 0
-      z = 0
-      maxHeightDiffPct = 1
-      lastMapHeight = -1
-
-      while z <= mapSize:
-         self.mapHeights[z] = {}
-         while x <= mapSize:
-            """ Calculate height at this point """
-            height_f = float(self.__getHeight2(image, mapSize, x, z))
-            roundedHeight_s = "{:.5f}".format(height_f)
-            roundedHeight_f = float(roundedHeight_s)
-
-            self.vertexCoords.append(x)
-            self.vertexCoords.append(roundedHeight_f)
-            self.vertexCoords.append(z)
-            self.mapHeights[z][x] = roundedHeight_f
-
-            currentNormal : tvec3 = self.__calcNormal2(image, mapSize, x, z)
-            self.normalCoords.append(currentNormal.x)
-            self.normalCoords.append(currentNormal.y)
-            self.normalCoords.append(currentNormal.z)
-
-            self.textureCoords.append((x / (mapSize+1))) # x
-            self.textureCoords.append((z / (mapSize+1))) # y
-
-            x = x + stepSize
-         x = 0
-         z = z + stepSize
-
-      vertexCountPerSite = int(mapSize / stepSize)
-      i = 0
-      runner = 0
-      j = 0
-      # Indices works
-      while j <= vertexCountPerSite-1:
-         while i <= vertexCountPerSite-1:
-            self.indices.append(runner + vertexCountPerSite + 1)
-            self.indices.append(runner + 1)
-            self.indices.append(runner)
-
-            self.indices.append(runner + vertexCountPerSite + 1)
-            self.indices.append(runner + vertexCountPerSite + 2)
-            self.indices.append(runner + 1)
-
-            i = i + 1
+            j = j + 1
             runner = runner + 1
+            i = 0
 
-         j = j + 1
-         runner = runner + 1
-         i = 0
+            self.stepSize = stepSize
+            self.mapSize = mapSize
 
-         self.stepSize = stepSize
-         self.mapSize = mapSize
+        return 1
 
-   def __getHeight2(self, image: Image, mapSize, x, z):
-      # Convert map-coordinates to image coords
-      imageWidth = image.width-1
-      imageHeight = image.height-1
-      if x >= 0 and z >= 0:
-         imageX = (x / (mapSize+1)) * imageWidth
-         imageY = (z / (mapSize+1)) * imageHeight
-         try:
-            r, g, b = image.getpixel((imageX, imageY))
-            return (r * g * b) * self.MAX_HEIGHT / self.MAX_PIXEL_COLOR * -1
-         except:
-            print("{} :: Range value : {}/{}".format(self.__class__, imageX, imageY))
-      else:
-         return 0
+    # -----------------
+    def __getHeight(self, image: Image, mapSize: int, xCoord: float, zCoord: float) -> float:
+        # Convert map-coordinates to image coords
+        imageWidth = image.width - 1
+        imageHeight = image.height - 1
+        if xCoord >= 0 and zCoord >= 0:
+            imageX = (xCoord / (mapSize + 1)) * imageWidth
+            imageY = (zCoord / (mapSize + 1)) * imageHeight
+            try:
+                r, g, b = image.getpixel((imageX, imageY))
+                return (r * g * b) * self.MAX_HEIGHT / self.MAX_PIXEL_COLOR * -1
+            except Exception as ex:
+                print("{} :: Range value : {}/{}".format(self.__class__, imageX, imageY))
 
-   def __calcNormal2(self, image: Image, mapSize: int, x: float, z: float):
-      hLeft = self.__getHeight2(image, mapSize, x - 1, z)
-      hRight = self.__getHeight2(image, mapSize, x + 1, z)
-      hDown = self.__getHeight2(image, mapSize, x, z - 1)
-      hUp = self.__getHeight2(image, mapSize, x, z + 1)
+        else:
+            return 0
 
-      normal = tvec3([hLeft - hRight, 2.0, hDown - hUp])
-      return normalize(normal)
+    # -----------------
+    def __calcNormal(self, image: Image, mapSize: int, x: float, z: float) -> vec3:
+        hLeft = self.__getHeight(image, mapSize, x - 1, z)
+        hRight = self.__getHeight(image, mapSize, x + 1, z)
+        hDown = self.__getHeight(image, mapSize, x, z - 1)
+        hUp = self.__getHeight(image, mapSize, x, z + 1)
+
+        normal = vec3([hLeft - hRight, 2.0, hDown - hUp])
+
+        return normalize(normal)

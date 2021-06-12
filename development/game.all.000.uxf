@@ -1,0 +1,630 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>5</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>850</x>
+      <y>130</y>
+      <w>140</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>Game Library
+
+-
+
+Offers functions for all Operations
+
+Includes: 
+- OpenGL support
+-- Camera
+-- data uploading into gpu cache
+- Qt OpenGL window
+-- runtime gl sync
+- Qt interface possibility
+-- interface settings</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1320</x>
+      <y>185</y>
+      <w>210</w>
+      <h>105</h>
+    </coordinates>
+    <panel_attributes>User defined space
+
+-
+
+- Defines game-logic
+- Includes MVC
+- View -&gt; Qt and dimensional graphics
+- Controller -&gt; Interface between user and game library
+- Model -&gt; System defined models for enemys, maps, players etc</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>765</x>
+      <y>300</y>
+      <w>135</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>OpenGL
+
+-
+
+- Loads data from memory into cache
+- Shader handles data-translation
+- </panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>920</x>
+      <y>300</y>
+      <w>135</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Qt
+
+-
+
+- Loads interface-elements from file
+- Users "View" handles interaction
+- GLWidget performs OpenGL projection</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>825</x>
+      <y>255</y>
+      <w>95</w>
+      <h>55</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;90.0;10.0;30.0;170.0;30.0;170.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>905</x>
+      <y>255</y>
+      <w>90</w>
+      <h>55</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>160.0;90.0;160.0;30.0;10.0;30.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>635</x>
+      <y>465</y>
+      <w>110</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>VOpenGL
+
+-
+
+-&gt; VObject</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>635</x>
+      <y>560</y>
+      <w>110</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>VObject
+
+-
+
+-&gt; VMap
+-&gt; VPlayer
+-&gt; VEnemy</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>740</x>
+      <y>505</y>
+      <w>35</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;50.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>635</x>
+      <y>435</y>
+      <w>50</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>Outer DAL</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>680</x>
+      <y>535</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>635</x>
+      <y>655</y>
+      <w>110</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>VPlayer
+
+-
+
+- setPosition(vec3)
+- setRotation(axis, degrees)
+- setScale(vec3)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>680</x>
+      <y>630</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>765</x>
+      <y>465</y>
+      <w>110</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>RawObject
+
+-
+
+-&gt; RawObject translated to VOpenGL or subclass</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>765</x>
+      <y>435</y>
+      <w>50</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>Inner DAL
+
+-
+
+- RawObject()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>830</x>
+      <y>375</y>
+      <w>15</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;180.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>635</x>
+      <y>300</y>
+      <w>110</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Data
+
+-
+
+- SQLite table with data
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>920</x>
+      <y>465</y>
+      <w>135</w>
+      <h>75</h>
+    </coordinates>
+    <panel_attributes>QGLWidget
+
+-
+
+- Renderer
+-- renders OpenGL data</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>985</x>
+      <y>375</y>
+      <w>15</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;180.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>740</x>
+      <y>330</y>
+      <w>35</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>50.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1320</x>
+      <y>310</y>
+      <w>105</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;Segment&gt;View
+
+-
+
+- Handles user input
+- Uses controller or global functions
+- </panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1320</x>
+      <y>395</y>
+      <w>105</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;Segment&gt;Controller
+
+-
+
+- Interface between user and library
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1050</x>
+      <y>455</y>
+      <w>315</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;100.0;610.0;100.0;610.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>650</x>
+      <y>400</y>
+      <w>680</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;70.0;10.0;40.0;1320.0;40.0;1320.0;10.0;1340.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1350</x>
+      <y>370</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1350</x>
+      <y>285</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>465</x>
+      <y>115</y>
+      <w>760</w>
+      <h>280</h>
+    </coordinates>
+    <panel_attributes>./libs/%</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>470</x>
+      <y>275</y>
+      <w>435</w>
+      <h>115</h>
+    </coordinates>
+    <panel_attributes>./libs/OpenGL</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>915</x>
+      <y>275</y>
+      <w>145</w>
+      <h>465</h>
+    </coordinates>
+    <panel_attributes>./libs/Qt</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1075</x>
+      <y>300</y>
+      <w>140</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Network
+
+-
+
+- Connection between Client and Server(s)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1070</x>
+      <y>275</y>
+      <w>150</w>
+      <h>115</h>
+    </coordinates>
+    <panel_attributes>./libs/Network</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>985</x>
+      <y>165</y>
+      <w>175</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>330.0;220.0;330.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>620</x>
+      <y>425</y>
+      <w>130</w>
+      <h>315</h>
+    </coordinates>
+    <panel_attributes>./libs/OpenGL/DAL/Outer</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>760</x>
+      <y>425</y>
+      <w>130</w>
+      <h>315</h>
+    </coordinates>
+    <panel_attributes>./libs/OpenGL/DAL/Inner</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1315</x>
+      <y>170</y>
+      <w>220</w>
+      <h>295</h>
+    </coordinates>
+    <panel_attributes>User defined, global, scaleable</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>630</x>
+      <y>285</y>
+      <w>120</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>DataLoading</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>475</x>
+      <y>285</y>
+      <w>150</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>./libs/OpenGL/Shader</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>480</x>
+      <y>300</y>
+      <w>135</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Shader
+
+-
+
+- Perfoms GPU arithmetic to visualize data
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>210</x>
+      <y>210</y>
+      <w>60</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Vertex Data</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>210</x>
+      <y>230</y>
+      <w>60</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>
+-
+
+- Objects data</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>285</x>
+      <y>210</y>
+      <w>60</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Shader-Files</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>285</x>
+      <y>230</y>
+      <w>60</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>
+-
+
+- Diffrent shader</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLUseCase</id>
+    <coordinates>
+      <x>135</x>
+      <y>210</y>
+      <w>60</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Qt Interface
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>135</x>
+      <y>230</y>
+      <w>60</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>
+-
+
+- Qt elements
+- Buttons, TextBox, etc</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>145</x>
+      <y>295</y>
+      <w>825</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;240.0;1630.0;240.0;1630.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>225</x>
+      <y>295</y>
+      <w>455</w>
+      <h>125</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;230.0;890.0;230.0;890.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>295</x>
+      <y>295</y>
+      <w>250</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;220.0;480.0;220.0;480.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>130</x>
+      <y>195</y>
+      <w>220</w>
+      <h>115</h>
+    </coordinates>
+    <panel_attributes>RAM</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

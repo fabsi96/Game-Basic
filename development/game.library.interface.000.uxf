@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>5</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>775</x>
+      <y>75</y>
+      <w>200</w>
+      <h>175</h>
+    </coordinates>
+    <panel_attributes>Library-Interface
+
+-
+
+VGraphics
+
+- VGraphics.getVObject(name: str): VOpenGL
+- VGraphics.setVObject(vobject: VOpenGL)
+
+-
+
+VInterface
+
+- VInterface.loadFromFile(name: str): []qelements
+- VInterface.getUIElement(name: str): qelement
+
+- VInterface.addUIElement(qelement)
+- VInterface.addUI([]qelements)
+- VInterface.deleteUIElement(qelement)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1130</x>
+      <y>90</y>
+      <w>210</w>
+      <h>105</h>
+    </coordinates>
+    <panel_attributes>User defined space
+
+-
+
+- Defines game-logic
+- Includes MVC
+- View -&gt; Qt and dimensional graphics
+- Controller -&gt; Interface between user and game library
+- Model -&gt; System defined models for enemys, maps, players etc</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1130</x>
+      <y>215</y>
+      <w>105</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;Segment&gt;View
+
+-
+
+- Handles user input
+- Uses controller or global functions
+- </panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1130</x>
+      <y>300</y>
+      <w>105</w>
+      <h>65</h>
+    </coordinates>
+    <panel_attributes>&lt;Segment&gt;Controller
+
+-
+
+- Interface between user and library
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1160</x>
+      <y>275</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1160</x>
+      <y>190</y>
+      <w>15</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1125</x>
+      <y>75</y>
+      <w>220</w>
+      <h>295</h>
+    </coordinates>
+    <panel_attributes>User defined, global, scaleable</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>970</x>
+      <y>185</y>
+      <w>165</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;310.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>970</x>
+      <y>205</y>
+      <w>165</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>310.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>410</x>
+      <y>310</y>
+      <w>280</w>
+      <h>355</h>
+    </coordinates>
+    <panel_attributes>VOpenGL
+
+-
+*Inheritance*
+
+-&gt; VObject
+
+-
+*Members*
+
+- _vertexCount: int
+- _indicesCount: int
+
+- _vao: int
+- _vertexVbo: int
+- _indexVbo: int
+- _normalsVbo: int
+- _texturesVbo: int
+
+- _sp: ShaderProgram
+- _textureFiles: int
+
+-
+*Functions*
+
+_ __init__(): Exception
+
+- virtual render(projectionMatrix, viewMatrix): Exception
+
+- _uploadGeometry(rawObject: RawObject): Exception
+- _uploadVertices([]vertices): Exception
+- _uploadIndices([]indices): Exception
+- _uploadNormals([]normals): Exception
+- _uploadTextures([]textures): Exception
+- _uploadTexture(filename, unit): Exception</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>730</x>
+      <y>310</y>
+      <w>280</w>
+      <h>355</h>
+    </coordinates>
+    <panel_attributes>VObject
+
+-
+*Inheritance*
+
+-&gt; VMap
+-&gt; VPlayer
+-&gt; VEnemy
+
+-
+*Members*
+
+- _position: vec3([])
+- _rotation: vec3([])
+- _degrees:  vec3([])
+- _scale: vec3([])
+- _transformationMatrix: mat4x4([])
+
+-
+*Functions*
+
+_ __init__(): Exception
+- _updateTransformationMatrix(): Exception
+- setPosition(x: int, y: int, z: int): Exception
+- setRotation(x: int, y: int, z: int, degrees: int): Exception
+- setScale(x: int, y: int, z:int): Exception</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>410</x>
+      <y>280</y>
+      <w>50</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>Outer DAL</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>685</x>
+      <y>315</y>
+      <w>55</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>90.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>730</x>
+      <y>680</y>
+      <w>280</w>
+      <h>220</h>
+    </coordinates>
+    <panel_attributes>VPlayer
+
+-</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>775</x>
+      <y>660</y>
+      <w>15</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>395</x>
+      <y>265</y>
+      <w>720</w>
+      <h>650</h>
+    </coordinates>
+    <panel_attributes>./libs/OpenGL/DAL/Outer</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>840</x>
+      <y>245</y>
+      <w>15</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;40.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>90</x>
+      <y>310</y>
+      <w>290</w>
+      <h>355</h>
+    </coordinates>
+    <panel_attributes>ShaderProgram
+
+-
+
+*Members*
+
+- __name: str
+- __programId: int
+- __attrIds: dict({str, int})
+- __matrixIds: dict({str, int})
+- __intIds: dict({str, int})
+- __floatIds: dict([str, float})
+
+-
+
+*Functions*
+
+- getProgramID(): int
+- start(): Exception
+- stop(): Exception
+
+- loadVertexAttribute(name: str): Exception
+- setVertexAttribute(name: str, numVerts: int, verType: (GL_FLOAT | GL_UINT)): Exception
+
+- loadMatrix4x4(name: str): Exception
+- setMatrix4x4(name: str, value: mat4x4([])): Exception
+
+- loadIntAttribute(name: str): Exception
+- setIntAttribute(name: str, value: int): Exception
+
+- loadFloatAttribute(name: str): Exception
+- setFloatAttribute(name: str, value: float): Exception
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>375</x>
+      <y>350</y>
+      <w>30</w>
+      <h>15</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>10.0;10.0;40.0;10.0</additional_attributes>
+  </element>
+</diagram>

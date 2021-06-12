@@ -4,4 +4,4 @@ class Settings:
    serverSettings = dict()
    dataSettings = dict()
 
-   engineDir = "engine"
+   engineDir = "src"

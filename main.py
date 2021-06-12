@@ -1,11 +1,11 @@
 # encoding: utf-8
 
 # System
-from engine.start.view import StartView
-from libs.OpenGL.DataLoader.dataloader import DataLoader
-from libs.OpenGL.camera import Camera
-from libs.Qt.vglwidget import VGLWidget
-from libs.library import Library
+from src.start.view import StartView
+from core.graphics.dataloader.dataloader import DataLoader
+from core.graphics.camera import Camera
+from core.gui.vglwidget import VGLWidget
+from core.library import Library
 from settings import Settings
 
 try:
@@ -30,7 +30,6 @@ except Exception as e:
     print("Exception :: {0}".format(str(e)))
 
 
-# ---------
 def main():
     workingDir_s = os.getcwd()
     readInits(workingDir_s, "game.ini")
@@ -38,8 +37,6 @@ def main():
 
     sys.exit(Library.app.exec())
 
-
-# ---------
 def iniToDict(dir_s, filename_s):
     retDict_o = dict()
     try:
@@ -54,8 +51,6 @@ def iniToDict(dir_s, filename_s):
 
     return retDict_o
 
-
-# ---------
 def readInits(workingDir_s, game_s, server_s="", data_s=""):
     try:
         gameConfigs_o = iniToDict(workingDir_s, game_s)
@@ -66,12 +61,10 @@ def readInits(workingDir_s, game_s, server_s="", data_s=""):
     except Exception as ex:
         print("Exception :: {0}".format(str(ex)))
 
-
-# ---------
 def initLibraries():
     try:
         Library.app = QApplication(sys.argv)
-        # OpenGL - DB Loading
+        # graphics - DB Loading
         Library.loader = DataLoader()
         Library.camera = Camera()
 
@@ -84,7 +77,5 @@ def initLibraries():
     except Exception as ex:
         print("Exception :: {0}".format(str(ex)))
 
-
-# ---------
 if __name__ == "__main__":
     main()

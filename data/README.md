@@ -1,2 +1,0 @@
-
-# Permissions for object-files:
